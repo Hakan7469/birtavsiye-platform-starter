@@ -1,7 +1,7 @@
 // pages/index.tsx
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { Recommendation } from "@/types/supabase";
+import { Recommendation, Entry } from "@/types/supabase";
 
 const supabase = createClient(
   "https://ypyadzojzjjmldtosnhm.supabase.co",
@@ -9,112 +9,89 @@ const supabase = createClient(
 );
 
 export default function Home() {
-  const [data, setData] = useState<Recommendation[]>([]);
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [author, setAuthor] = useState("");
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [selectedRecommendation, setSelectedRecommendation] = useState<Recommendation | null>(null);
+  const [entries, setEntries] = useState<Entry[]>([]);
 
+  // Tüm başlıkları çek
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchRecommendations = async () => {
       const { data, error } = await supabase.from("recommendations").select("*");
-      if (error) console.error("Veri çekme hatası:", error);
-      else setData(data as Recommendation[]);
+      if (error) console.error("Başlık çekme hatası:", error);
+      else setRecommendations(data as Recommendation[]);
     };
 
-    fetchData();
+    fetchRecommendations();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title || !content || !author) return;
+  // Seçilen başlığa ait entry'leri çek
+  useEffect(() => {
+    if (!selectedRecommendation) return;
 
-    const { error } = await supabase.from("recommendations").insert({
-      title,
-      content,
-      author,
-    });
+    const fetchEntries = async () => {
+      const { data, error } = await supabase
+        .from("entries")
+        .select("*")
+        .eq("recommendation_id", selectedRecommendation.id);
 
-    if (error) console.error("Ekleme hatası:", error);
-    else {
-      setTitle("");
-      setContent("");
-      setAuthor("");
-      location.reload();
-    }
-  };
+      if (error) console.error("Entry çekme hatası:", error);
+      else setEntries(data as Entry[]);
+    };
+
+    fetchEntries();
+  }, [selectedRecommendation]);
 
   return (
     <div className="min-h-screen flex flex-col border border-black">
       {/* Üst Blok */}
       <div className="h-[120px] border border-black flex items-center justify-between px-4">
-        <h1 className="text-xl font-bold">Üst Blok</h1>
-
-        {/* Arama ve Form */}
-        <div className="flex items-start space-x-4">
-          <input
-            type="text"
-            placeholder="Tavsiye ara..."
-            className="border px-2 py-1 rounded w-48"
-          />
-
-          <form onSubmit={handleSubmit} className="flex space-x-2">
-            <input
-              type="text"
-              placeholder="Başlık"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="border px-2 py-1 rounded w-32"
-            />
-            <input
-              type="text"
-              placeholder="Tavsiye"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className="border px-2 py-1 rounded w-72"
-            />
-            <input
-              type="text"
-              placeholder="Yazar"
-              value={author}
-              onChange={(e) => setAuthor(e.target.value)}
-              className="border px-2 py-1 rounded w-24"
-            />
-            <button
-              type="submit"
-              className="bg-blue-500 text-white px-4 py-1 rounded"
-            >
-              Gönder
-            </button>
-          </form>
-        </div>
+        <h1 className="text-xl font-bold">Tavsiye Platformu</h1>
       </div>
 
-      {/* Alt Blok: Sol - Orta - Sağ */}
+      {/* Alt Blok */}
       <div className="flex flex-grow border-t border-black">
-        {/* Sol Blok */}
+        {/* Sol Blok: Başlıklar */}
         <div className="w-1/3 border border-black p-4 overflow-auto">
-          <h2 className="font-bold text-lg mb-2">Tavsiyeler</h2>
-          {data.length === 0 ? (
-            <p>Veri bulunamadı.</p>
+          <h2 className="font-bold text-lg mb-2">Başlıklar</h2>
+          <ul className="space-y-2">
+            {recommendations.map((rec) => (
+              <li
+                key={rec.id}
+                onClick={() => setSelectedRecommendation(rec)}
+                className={`cursor-pointer p-2 rounded hover:bg-gray-200 ${
+                  selectedRecommendation?.id === rec.id ? "bg-blue-100 font-semibold" : ""
+                }`}
+              >
+                {rec.title}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Orta Blok: Seçilen başlık ve entry'ler */}
+        <div className="w-1/3 border border-black p-4 overflow-auto">
+          {selectedRecommendation ? (
+            <>
+              <h2 className="font-bold text-xl mb-4">{selectedRecommendation.title}</h2>
+              {entries.length === 0 ? (
+                <p>Bu başlık altında henüz entry yok.</p>
+              ) : (
+                <ul className="space-y-4">
+                  {entries.map((entry) => (
+                    <li key={entry.id} className="border p-2 rounded">
+                      <p className="text-sm">{entry.content}</p>
+                      <p className="text-xs text-gray-600">Yazar: {entry.author}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
           ) : (
-            <ul className="space-y-4">
-              {data.map((item) => (
-                <li key={item.id} className="border p-2 rounded">
-                  <p className="font-semibold">{item.title}</p>
-                  <p className="text-sm">{item.content}</p>
-                  <p className="text-xs text-gray-600">Yazar: {item.author}</p>
-                </li>
-              ))}
-            </ul>
+            <p>Bir başlık seçin.</p>
           )}
         </div>
 
-        {/* Orta Blok */}
-        <div className="w-1/3 border border-black p-4">
-          Orta Blok
-        </div>
-
-        {/* Sağ Blok */}
+        {/* Sağ Blok (şimdilik boş) */}
         <div className="w-1/3 border border-black p-4">
           Sağ Blok
         </div>
