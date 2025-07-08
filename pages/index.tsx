@@ -50,37 +50,38 @@ export default function Home() {
         <h1 className="text-xl font-bold">Üst Blok</h1>
 
         {/* Arama ve Form */}
-        <div className="flex space-x-4">
+        <div className="flex items-start space-x-4">
           <input
             type="text"
             placeholder="Tavsiye ara..."
-            className="border px-2 py-1 rounded"
+            className="border px-2 py-1 rounded w-48"
           />
 
-          <form onSubmit={handleSubmit} className="flex flex-col space-y-1">
+          <form onSubmit={handleSubmit} className="flex space-x-2">
             <input
               type="text"
               placeholder="Başlık"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="border px-2 py-1 rounded"
+              className="border px-2 py-1 rounded w-32"
             />
-            <textarea
+            <input
+              type="text"
               placeholder="Tavsiye"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              className="border px-2 py-1 rounded"
+              className="border px-2 py-1 rounded w-72"
             />
             <input
               type="text"
               placeholder="Yazar"
               value={author}
               onChange={(e) => setAuthor(e.target.value)}
-              className="border px-2 py-1 rounded"
+              className="border px-2 py-1 rounded w-24"
             />
             <button
               type="submit"
-              className="bg-blue-500 text-white px-2 py-1 rounded"
+              className="bg-blue-500 text-white px-4 py-1 rounded"
             >
               Gönder
             </button>
