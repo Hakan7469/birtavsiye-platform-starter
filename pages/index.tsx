@@ -9,17 +9,28 @@ const supabase = createClient(
 );
 
 export default function Home() {
-  const [data, setData] = useState<Recommendation[]>([]);
+  const [allData, setAllData] = useState<Recommendation[]>([]);
+  const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
+  const [filteredData, setFilteredData] = useState<Recommendation[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       const { data, error } = await supabase.from("recommendations").select("*");
       if (error) console.error("Veri çekme hatası:", error);
-      else setData(data as Recommendation[]);
+      else setAllData(data as Recommendation[]);
     };
 
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (selectedTopic) {
+      const entries = allData.filter((item) => item.title === selectedTopic);
+      setFilteredData(entries);
+    }
+  }, [selectedTopic, allData]);
+
+  const uniqueTitles = Array.from(new Set(allData.map((item) => item.title)));
 
   return (
     <div className="min-h-screen flex flex-col border border-black">
@@ -32,25 +43,41 @@ export default function Home() {
       <div className="flex flex-grow border-t border-black">
         {/* Sol Blok */}
         <div className="w-1/3 border border-black p-4 overflow-auto">
-          <h2 className="font-bold text-lg mb-2">Tavsiyeler</h2>
-          {data.length === 0 ? (
-            <p>Veri bulunamadı.</p>
-          ) : (
-            <ul className="space-y-4">
-              {data.map((item) => (
-                <li key={item.id} className="border p-2 rounded">
-                  <p className="font-semibold">{item.title}</p>
-                  <p className="text-sm">{item.content}</p>
-                  <p className="text-xs text-gray-600">Yazar: {item.author}</p>
-                </li>
-              ))}
-            </ul>
-          )}
+          <h2 className="font-bold text-lg mb-2">Başlıklar</h2>
+          <ul className="space-y-2">
+            {uniqueTitles.map((title, index) => (
+              <li
+                key={index}
+                className="cursor-pointer hover:underline text-blue-600"
+                onClick={() => setSelectedTopic(title || null)}
+              >
+                {title}
+              </li>
+            ))}
+          </ul>
         </div>
 
         {/* Orta Blok */}
         <div className="w-1/3 border border-black p-4">
-          Orta Blok
+          {selectedTopic ? (
+            <>
+              <h2 className="text-xl font-bold mb-4">{selectedTopic}</h2>
+              {filteredData.length > 0 ? (
+                <ul className="space-y-4">
+                  {filteredData.map((item) => (
+                    <li key={item.id} className="border p-2 rounded">
+                      <p className="text-sm">{item.content}</p>
+                      <p className="text-xs text-gray-600">Yazar: {item.author}</p>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>Bu başlık altında henüz entry yok.</p>
+              )}
+            </>
+          ) : (
+            <p>Sol taraftan bir başlık seçin.</p>
+          )}
         </div>
 
         {/* Sağ Blok */}
