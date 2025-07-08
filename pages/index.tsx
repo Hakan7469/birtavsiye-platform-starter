@@ -1,3 +1,4 @@
+// pages/index.tsx
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { Recommendation } from "@/types/supabase";
@@ -9,8 +10,9 @@ const supabase = createClient(
 
 export default function Home() {
   const [data, setData] = useState<Recommendation[]>([]);
-  const [selectedTitle, setSelectedTitle] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [author, setAuthor] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -22,30 +24,68 @@ export default function Home() {
     fetchData();
   }, []);
 
-  const filteredTitles = Array.from(
-    new Set(
-      data
-        .map((item) => item.title)
-        .filter((title) =>
-          title?.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-    )
-  );
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title || !content || !author) return;
 
-  const selectedEntries = data.filter((item) => item.title === selectedTitle);
+    const { error } = await supabase.from("recommendations").insert({
+      title,
+      content,
+      author,
+    });
+
+    if (error) console.error("Ekleme hatası:", error);
+    else {
+      setTitle("");
+      setContent("");
+      setAuthor("");
+      location.reload();
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col border border-black">
       {/* Üst Blok */}
-      <div className="h-[120px] border border-black flex items-center justify-center gap-4 px-4">
-        <input
-          type="text"
-          placeholder="Tavsiye ara..."
-          className="border px-4 py-2 rounded w-[300px] text-base"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-        <span className="text-xl font-bold">Bir Tavsiye Platformu</span>
+      <div className="h-[120px] border border-black flex items-center justify-between px-4">
+        <h1 className="text-xl font-bold">Üst Blok</h1>
+
+        {/* Arama ve Form */}
+        <div className="flex space-x-4">
+          <input
+            type="text"
+            placeholder="Tavsiye ara..."
+            className="border px-2 py-1 rounded"
+          />
+
+          <form onSubmit={handleSubmit} className="flex flex-col space-y-1">
+            <input
+              type="text"
+              placeholder="Başlık"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="border px-2 py-1 rounded"
+            />
+            <textarea
+              placeholder="Tavsiye"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              className="border px-2 py-1 rounded"
+            />
+            <input
+              type="text"
+              placeholder="Yazar"
+              value={author}
+              onChange={(e) => setAuthor(e.target.value)}
+              className="border px-2 py-1 rounded"
+            />
+            <button
+              type="submit"
+              className="bg-blue-500 text-white px-2 py-1 rounded"
+            >
+              Gönder
+            </button>
+          </form>
+        </div>
       </div>
 
       {/* Alt Blok: Sol - Orta - Sağ */}
@@ -53,17 +93,15 @@ export default function Home() {
         {/* Sol Blok */}
         <div className="w-1/3 border border-black p-4 overflow-auto">
           <h2 className="font-bold text-lg mb-2">Tavsiyeler</h2>
-          {filteredTitles.length === 0 ? (
-            <p>Başlık bulunamadı.</p>
+          {data.length === 0 ? (
+            <p>Veri bulunamadı.</p>
           ) : (
             <ul className="space-y-4">
-              {filteredTitles.map((title, index) => (
-                <li
-                  key={index}
-                  className="border p-2 rounded cursor-pointer hover:bg-gray-100"
-                  onClick={() => setSelectedTitle(title || "")}
-                >
-                  <p className="font-semibold">{title}</p>
+              {data.map((item) => (
+                <li key={item.id} className="border p-2 rounded">
+                  <p className="font-semibold">{item.title}</p>
+                  <p className="text-sm">{item.content}</p>
+                  <p className="text-xs text-gray-600">Yazar: {item.author}</p>
                 </li>
               ))}
             </ul>
@@ -72,21 +110,7 @@ export default function Home() {
 
         {/* Orta Blok */}
         <div className="w-1/3 border border-black p-4">
-          {selectedTitle ? (
-            <>
-              <h2 className="text-xl font-bold mb-2">{selectedTitle}</h2>
-              <ul className="space-y-2">
-                {selectedEntries.map((entry) => (
-                  <li key={entry.id} className="border p-2 rounded">
-                    <p className="text-sm">{entry.content}</p>
-                    <p className="text-xs text-gray-600">Yazar: {entry.author}</p>
-                  </li>
-                ))}
-              </ul>
-            </>
-          ) : (
-            <p>Bir başlık seçin.</p>
-          )}
+          Orta Blok
         </div>
 
         {/* Sağ Blok */}
