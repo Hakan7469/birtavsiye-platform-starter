@@ -1,4 +1,5 @@
 // types/supabase.ts
+
 export type Recommendation = {
   id: string;
   uuid: string | null;
@@ -10,4 +11,12 @@ export type Recommendation = {
   topic_id: string | null;
   like: number | null;
   dislike: number | null;
+};
+
+export type Entry = {
+  id: string;
+  recommendation_id: string;
+  content: string;
+  author: string;
+  created_at: string;
 };
