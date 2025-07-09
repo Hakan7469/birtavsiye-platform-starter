@@ -114,30 +114,28 @@ export default function Home() {
     }
   };
 
+  const filteredRecommendations = recommendations.filter((rec) =>
+    rec.title.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
     <div className="min-h-screen flex flex-col border border-black">
-      {/* Üst Blok */}
       <div className="h-[120px] border border-black flex items-center justify-between px-4">
         <h1 className="text-xl font-bold">Birtavsiye</h1>
 
-        {user && (
-          <input
-            type="text"
-            placeholder="Tavsiye ara..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="border px-2 py-1 rounded w-48"
-          />
-        )}
+        <input
+          type="text"
+          placeholder="Tavsiye ara..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="border px-2 py-1 rounded w-48"
+        />
 
         <div className="text-sm">
           {user ? (
             <div className="flex items-center space-x-2">
               <span className="text-gray-600">{user.email}</span>
-              <button
-                className="text-red-500 underline"
-                onClick={handleLogout}
-              >
+              <button className="text-red-500 underline" onClick={handleLogout}>
                 Çıkış Yap
               </button>
             </div>
@@ -146,9 +144,6 @@ export default function Home() {
           )}
         </div>
       </div>
-
-      {/* Alt Bloklar... (aynı şekilde devam ediyor) */}
-      {/* ... */}
     </div>
   );
 }
