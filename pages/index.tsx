@@ -17,6 +17,7 @@ export default function Home() {
   const [author, setAuthor] = useState("");
   const [entryContent, setEntryContent] = useState("");
   const [entryAuthor, setEntryAuthor] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     const fetchRecommendations = async () => {
@@ -111,11 +112,35 @@ export default function Home() {
 
         {/* Arama ve Form */}
         <div className="flex items-start space-x-4">
-          <input
-            type="text"
-            placeholder="Tavsiye ara..."
-            className="border px-2 py-1 rounded w-48"
-          />
+          <div className="flex flex-col">
+            <input
+              type="text"
+              list="search-suggestions"
+              placeholder="Tavsiye ara..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                const match = recommendations.find(r =>
+                  r.title.toLowerCase() === e.target.value.toLowerCase()
+                );
+                if (match) setSelectedRecommendation(match);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  const match = recommendations.find(r =>
+                    r.title.toLowerCase() === searchQuery.toLowerCase()
+                  );
+                  if (match) setSelectedRecommendation(match);
+                }
+              }}
+              className="border px-2 py-1 rounded w-48"
+            />
+            <datalist id="search-suggestions">
+              {recommendations.map((item) => (
+                <option key={item.id} value={item.title} />
+              ))}
+            </datalist>
+          </div>
 
           <form onSubmit={handleRecommendationSubmit} className="flex space-x-2">
             <div className="flex flex-col">
