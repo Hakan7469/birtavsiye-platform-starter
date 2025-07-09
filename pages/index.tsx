@@ -43,13 +43,43 @@ export default function Home() {
   const handleRecommendationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !content || !author) return;
-    const { error } = await supabase.from("recommendations").insert({
-      title,
+
+    const { data: existing, error: findError } = await supabase
+      .from("recommendations")
+      .select("*")
+      .ilike("title", title);
+
+    if (findError) {
+      console.error("Arama hatası:", findError);
+      return;
+    }
+
+    let recommendationId: string | null = null;
+
+    if (existing && existing.length > 0) {
+      recommendationId = existing[0].id;
+    } else {
+      const { data: inserted, error: insertError } = await supabase
+        .from("recommendations")
+        .insert({ title, content, author })
+        .select();
+
+      if (insertError) {
+        console.error("Başlık ekleme hatası:", insertError);
+        return;
+      }
+      recommendationId = inserted[0].id;
+    }
+
+    const { error: entryError } = await supabase.from("entries").insert({
       content,
       author,
+      recommendation_id: recommendationId,
     });
-    if (error) console.error("Ekleme hatası:", error);
-    else {
+
+    if (entryError) {
+      console.error("Entry ekleme hatası:", entryError);
+    } else {
       setTitle("");
       setContent("");
       setAuthor("");
@@ -88,13 +118,21 @@ export default function Home() {
           />
 
           <form onSubmit={handleRecommendationSubmit} className="flex space-x-2">
-            <input
-              type="text"
-              placeholder="Başlık"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="border px-2 py-1 rounded w-32"
-            />
+            <div className="flex flex-col">
+              <input
+                type="text"
+                list="title-suggestions"
+                placeholder="Başlık"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="border px-2 py-1 rounded w-32"
+              />
+              <datalist id="title-suggestions">
+                {recommendations.map((item) => (
+                  <option key={item.id} value={item.title} />
+                ))}
+              </datalist>
+            </div>
             <input
               type="text"
               placeholder="Tavsiye"
