@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { Recommendation } from "@/types/supabase";
+import { Session } from "@supabase/supabase-js";
 
 const supabase = createClient(
   "https://ypyadzojzjjmldtosnhm.supabase.co",
@@ -17,7 +18,18 @@ export default function Home() {
   const [author, setAuthor] = useState("");
   const [entryContent, setEntryContent] = useState("");
   const [entryAuthor, setEntryAuthor] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [session, setSession] = useState<Session | null>(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+    supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+  }, []);
 
   useEffect(() => {
     const fetchRecommendations = async () => {
@@ -104,87 +116,63 @@ export default function Home() {
     }
   };
 
+  const handleLogin = async () => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) alert("Giriş başarısız: " + error.message);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+
   return (
     <div className="min-h-screen flex flex-col border border-black">
       {/* Üst Blok */}
       <div className="h-[120px] border border-black flex items-center justify-between px-4">
         <h1 className="text-xl font-bold">Üst Blok</h1>
 
-        {/* Arama ve Form */}
-        <div className="flex items-start space-x-4">
-          <div className="flex flex-col">
-            <input
-              type="text"
-              list="search-suggestions"
-              placeholder="Tavsiye ara..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                const match = recommendations.find(r =>
-                  r.title.toLowerCase() === e.target.value.toLowerCase()
-                );
-                if (match) setSelectedRecommendation(match);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  const match = recommendations.find(r =>
-                    r.title.toLowerCase() === searchQuery.toLowerCase()
-                  );
-                  if (match) setSelectedRecommendation(match);
-                }
-              }}
-              className="border px-2 py-1 rounded w-48"
-            />
-            <datalist id="search-suggestions">
-              {recommendations.map((item) => (
-                <option key={item.id} value={item.title} />
-              ))}
-            </datalist>
-          </div>
-
-          <form onSubmit={handleRecommendationSubmit} className="flex space-x-2">
-            <div className="flex flex-col">
+        {/* Giriş/Kayıt Alanı */}
+        <div className="flex items-center space-x-2">
+          {session ? (
+            <>
+              <span className="text-sm">{session.user.email}</span>
+              <button
+                onClick={handleLogout}
+                className="bg-red-500 text-white px-3 py-1 rounded"
+              >
+                Çıkış Yap
+              </button>
+            </>
+          ) : (
+            <>
               <input
-                type="text"
-                list="title-suggestions"
-                placeholder="Başlık"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="border px-2 py-1 rounded w-32"
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="border px-2 py-1 rounded"
               />
-              <datalist id="title-suggestions">
-                {recommendations.map((item) => (
-                  <option key={item.id} value={item.title} />
-                ))}
-              </datalist>
-            </div>
-            <input
-              type="text"
-              placeholder="Tavsiye"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className="border px-2 py-1 rounded w-72"
-            />
-            <input
-              type="text"
-              placeholder="Yazar"
-              value={author}
-              onChange={(e) => setAuthor(e.target.value)}
-              className="border px-2 py-1 rounded w-24"
-            />
-            <button
-              type="submit"
-              className="bg-blue-500 text-white px-4 py-1 rounded"
-            >
-              Gönder
-            </button>
-          </form>
+              <input
+                type="password"
+                placeholder="Şifre"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="border px-2 py-1 rounded"
+              />
+              <button
+                onClick={handleLogin}
+                className="bg-blue-500 text-white px-3 py-1 rounded"
+              >
+                Giriş Yap
+              </button>
+            </>
+          )}
         </div>
       </div>
 
-      {/* Alt Blok: Sol - Orta - Sağ */}
+      {/* Alt Blok */}
       <div className="flex flex-grow border-t border-black">
-        {/* Sol Blok */}
+        {/* Sol */}
         <div className="w-1/3 border border-black p-4 overflow-auto">
           <h2 className="font-bold text-lg mb-2">Tavsiyeler</h2>
           {recommendations.length === 0 ? (
@@ -204,7 +192,7 @@ export default function Home() {
           )}
         </div>
 
-        {/* Orta Blok */}
+        {/* Orta */}
         <div className="w-1/3 border border-black p-4">
           {selectedRecommendation ? (
             <div>
@@ -219,35 +207,37 @@ export default function Home() {
                 ))}
               </ul>
 
-              <form onSubmit={handleEntrySubmit} className="mt-4 space-y-2">
-                <input
-                  type="text"
-                  placeholder="Yorum"
-                  value={entryContent}
-                  onChange={(e) => setEntryContent(e.target.value)}
-                  className="border px-2 py-1 rounded w-full"
-                />
-                <input
-                  type="text"
-                  placeholder="Yazar"
-                  value={entryAuthor}
-                  onChange={(e) => setEntryAuthor(e.target.value)}
-                  className="border px-2 py-1 rounded w-full"
-                />
-                <button
-                  type="submit"
-                  className="bg-green-500 text-white px-4 py-1 rounded"
-                >
-                  Entry Ekle
-                </button>
-              </form>
+              {session && (
+                <form onSubmit={handleEntrySubmit} className="mt-4 space-y-2">
+                  <input
+                    type="text"
+                    placeholder="Yorum"
+                    value={entryContent}
+                    onChange={(e) => setEntryContent(e.target.value)}
+                    className="border px-2 py-1 rounded w-full"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Yazar"
+                    value={entryAuthor}
+                    onChange={(e) => setEntryAuthor(e.target.value)}
+                    className="border px-2 py-1 rounded w-full"
+                  />
+                  <button
+                    type="submit"
+                    className="bg-green-500 text-white px-4 py-1 rounded"
+                  >
+                    Entry Ekle
+                  </button>
+                </form>
+              )}
             </div>
           ) : (
             <p>Bir başlık seçin.</p>
           )}
         </div>
 
-        {/* Sağ Blok */}
+        {/* Sağ */}
         <div className="w-1/3 border border-black p-4">
           Sağ Blok
         </div>
