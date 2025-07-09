@@ -24,14 +24,18 @@ export default function Login() {
     if (error) {
       setHata("E-posta veya şifre hatalı.");
     } else {
-      router.push("/");
+      router.push("/profil");
     }
   };
 
   const handleGoogleLogin = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
+      options: {
+        redirectTo: "http://localhost:3000/profil", // Vercel kullanıyorsan burayı canlı URL yap
+      },
     });
+
     if (error) {
       setHata("Google ile giriş yapılamadı.");
     }
@@ -39,11 +43,9 @@ export default function Login() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <form
-        onSubmit={handleLogin}
-        className="bg-white p-8 rounded shadow-md w-80 space-y-4"
-      >
+      <form onSubmit={handleLogin} className="bg-white p-8 rounded shadow-md w-80 space-y-4">
         <h2 className="text-xl font-bold text-center">Oturum Aç</h2>
+
         <input
           type="email"
           placeholder="E-posta"
@@ -60,15 +62,14 @@ export default function Login() {
           className="w-full border p-2 rounded"
           required
         />
+
         {hata && <p className="text-red-500 text-sm">{hata}</p>}
-        <button
-          type="submit"
-          className="w-full bg-blue-600 text-white py-2 rounded"
-        >
+
+        <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded">
           Giriş Yap
         </button>
 
-        <div className="text-center text-sm text-gray-500">veya</div>
+        <div className="text-center text-sm text-gray-600">veya</div>
 
         <button
           type="button"
