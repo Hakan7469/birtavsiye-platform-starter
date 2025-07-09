@@ -120,6 +120,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col border border-black">
+      {/* Üst Blok */}
       <div className="h-[120px] border border-black flex items-center justify-between px-4">
         <h1 className="text-xl font-bold">Birtavsiye</h1>
 
@@ -142,6 +143,76 @@ export default function Home() {
           ) : (
             <span>Giriş yapılmamış</span>
           )}
+        </div>
+      </div>
+
+      {/* Alt Bloklar: Sol - Orta - Sağ */}
+      <div className="flex flex-1 border border-black">
+        {/* Sol Blok */}
+        <div className="w-1/4 border border-black p-2 overflow-y-auto">
+          <h2 className="font-bold mb-2">Tavsiyeler</h2>
+          {filteredRecommendations.map((rec) => (
+            <button
+              key={rec.id}
+              className={`block w-full text-left px-2 py-1 mb-1 rounded ${
+                selectedRecommendation?.id === rec.id
+                  ? "bg-gray-300 font-bold"
+                  : "bg-white hover:bg-gray-100"
+              }`}
+              onClick={() => setSelectedRecommendation(rec)}
+            >
+              {rec.title}
+            </button>
+          ))}
+        </div>
+
+        {/* Orta Blok */}
+        <div className="w-2/4 border border-black p-4">
+          {selectedRecommendation ? (
+            <>
+              <h2 className="text-lg font-bold mb-2">{selectedRecommendation.title}</h2>
+              {entries.length === 0 ? (
+                <p className="text-gray-600">Bu başlık altında henüz entry yok.</p>
+              ) : (
+                <ul className="mb-4">
+                  {entries.map((entry, index) => (
+                    <li key={index} className="border p-2 mb-2 rounded">
+                      {entry.content} — <span className="text-sm text-gray-600">{entry.author}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {/* Entry Ekleme Formu */}
+              <form onSubmit={handleEntrySubmit} className="space-y-2">
+                <textarea
+                  value={entryContent}
+                  onChange={(e) => setEntryContent(e.target.value)}
+                  className="w-full border p-2 rounded"
+                  placeholder="Tavsiyeni yaz..."
+                />
+                <input
+                  value={entryAuthor}
+                  onChange={(e) => setEntryAuthor(e.target.value)}
+                  className="w-full border p-2 rounded"
+                  placeholder="Yazar adı"
+                />
+                <button
+                  type="submit"
+                  className="bg-green-500 text-white px-4 py-2 rounded w-full"
+                >
+                  Entry Ekle
+                </button>
+              </form>
+            </>
+          ) : (
+            <p className="text-gray-600">Bir başlık seçin.</p>
+          )}
+        </div>
+
+        {/* Sağ Blok */}
+        <div className="w-1/4 border border-black p-4">
+          <p>Sağ Blok</p>
         </div>
       </div>
     </div>
