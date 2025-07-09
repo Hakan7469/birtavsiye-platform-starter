@@ -8,43 +8,46 @@ const supabase = createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlweWFkem9qempqbWxkdG9zbmhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4NDEwODUsImV4cCI6MjA2NjQxNzA4NX0.tbEwxQ0Osj6gKwrXASh7AjKw-8silIOZ3z3Feymao1Q"
 );
 
-interface Entry {
-  id: string;
-  content: string;
-  author: string;
-  recommendation_id: string;
-}
-
 export default function Home() {
-  const [data, setData] = useState<Recommendation[]>([]);
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [selectedRecommendation, setSelectedRecommendation] = useState<Recommendation | null>(null);
+  const [entries, setEntries] = useState<any[]>([]);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [author, setAuthor] = useState("");
-  const [selectedRecommendation, setSelectedRecommendation] = useState<Recommendation | null>(null);
-  const [entries, setEntries] = useState<Entry[]>([]);
-  const [newEntry, setNewEntry] = useState("");
-  const [newAuthor, setNewAuthor] = useState("");
+  const [entryContent, setEntryContent] = useState("");
+  const [entryAuthor, setEntryAuthor] = useState("");
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchRecommendations = async () => {
       const { data, error } = await supabase.from("recommendations").select("*");
       if (error) console.error("Veri çekme hatası:", error);
-      else setData(data as Recommendation[]);
+      else setRecommendations(data as Recommendation[]);
     };
-
-    fetchData();
+    fetchRecommendations();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  useEffect(() => {
+    const fetchEntries = async () => {
+      if (!selectedRecommendation) return;
+      const { data, error } = await supabase
+        .from("entries")
+        .select("*")
+        .eq("recommendation_id", selectedRecommendation.id);
+      if (error) console.error("Entry çekme hatası:", error);
+      else setEntries(data);
+    };
+    fetchEntries();
+  }, [selectedRecommendation]);
+
+  const handleRecommendationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !content || !author) return;
-
     const { error } = await supabase.from("recommendations").insert({
       title,
       content,
       author,
     });
-
     if (error) console.error("Ekleme hatası:", error);
     else {
       setTitle("");
@@ -54,14 +57,20 @@ export default function Home() {
     }
   };
 
-  const handleSelect = async (recommendation: Recommendation) => {
-    setSelectedRecommendation(recommendation);
-    const { data: entriesData, error } = await supabase
-      .from("entries")
-      .select("*")
-      .eq("recommendation_id", recommendation.id);
-    if (error) console.error("Entry çekilemedi:", error);
-    else setEntries(entriesData as Entry[]);
+  const handleEntrySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!entryContent || !entryAuthor || !selectedRecommendation) return;
+    const { error } = await supabase.from("entries").insert({
+      content: entryContent,
+      author: entryAuthor,
+      recommendation_id: selectedRecommendation.id,
+    });
+    if (error) console.error("Entry ekleme hatası:", error);
+    else {
+      setEntryContent("");
+      setEntryAuthor("");
+      location.reload();
+    }
   };
 
   return (
@@ -78,7 +87,7 @@ export default function Home() {
             className="border px-2 py-1 rounded w-48"
           />
 
-          <form onSubmit={handleSubmit} className="flex space-x-2">
+          <form onSubmit={handleRecommendationSubmit} className="flex space-x-2">
             <input
               type="text"
               placeholder="Başlık"
@@ -115,17 +124,15 @@ export default function Home() {
         {/* Sol Blok */}
         <div className="w-1/3 border border-black p-4 overflow-auto">
           <h2 className="font-bold text-lg mb-2">Tavsiyeler</h2>
-          {data.length === 0 ? (
+          {recommendations.length === 0 ? (
             <p>Veri bulunamadı.</p>
           ) : (
             <ul className="space-y-4">
-              {data.map((item) => (
+              {recommendations.map((item) => (
                 <li
                   key={item.id}
-                  className={`border p-2 rounded cursor-pointer hover:bg-gray-100 ${
-                    selectedRecommendation?.id === item.id ? "bg-gray-200" : ""
-                  }`}
-                  onClick={() => handleSelect(item)}
+                  className="border p-2 rounded cursor-pointer hover:bg-gray-100"
+                  onClick={() => setSelectedRecommendation(item)}
                 >
                   <p className="font-semibold">{item.title}</p>
                 </li>
@@ -135,71 +142,43 @@ export default function Home() {
         </div>
 
         {/* Orta Blok */}
-        <div className="w-1/3 border border-black p-4 overflow-auto">
+        <div className="w-1/3 border border-black p-4">
           {selectedRecommendation ? (
-            <>
-              <h2 className="font-bold text-xl mb-4">{selectedRecommendation.title}</h2>
+            <div>
+              <h2 className="font-bold text-xl mb-2">{selectedRecommendation.title}</h2>
 
-              {entries.length === 0 ? (
-                <p>Bu başlık altında henüz entry yok.</p>
-              ) : (
-                <ul className="space-y-4 mb-4">
-                  {entries.map((entry) => (
-                    <li key={entry.id} className="border p-2 rounded">
-                      <p className="text-sm">{entry.content}</p>
-                      <p className="text-xs text-gray-600">Yazar: {entry.author}</p>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <ul className="space-y-2">
+                {entries.map((entry, index) => (
+                  <li key={index} className="border p-2 rounded">
+                    <p>{entry.content}</p>
+                    <p className="text-xs text-gray-600">Yazar: {entry.author}</p>
+                  </li>
+                ))}
+              </ul>
 
-              {/* Entry ekleme formu */}
-              <form
-                onSubmit={async (e) => {
-                  e.preventDefault();
-                  if (!newEntry || !newAuthor) return;
-
-                  const { error } = await supabase.from("entries").insert({
-                    recommendation_id: selectedRecommendation.id,
-                    content: newEntry,
-                    author: newAuthor,
-                  });
-
-                  if (error) {
-                    console.error("Entry eklenemedi:", error);
-                  } else {
-                    setNewEntry("");
-                    setNewAuthor("");
-                    const { data: updatedEntries } = await supabase
-                      .from("entries")
-                      .select("*")
-                      .eq("recommendation_id", selectedRecommendation.id);
-                    setEntries(updatedEntries as Entry[]);
-                  }
-                }}
-                className="space-y-2 mt-4"
-              >
-                <textarea
-                  placeholder="Tavsiyeni yaz..."
-                  value={newEntry}
-                  onChange={(e) => setNewEntry(e.target.value)}
-                  className="w-full border px-2 py-1 rounded h-24"
+              <form onSubmit={handleEntrySubmit} className="mt-4 space-y-2">
+                <input
+                  type="text"
+                  placeholder="Yorum"
+                  value={entryContent}
+                  onChange={(e) => setEntryContent(e.target.value)}
+                  className="border px-2 py-1 rounded w-full"
                 />
                 <input
                   type="text"
-                  placeholder="Yazar adı"
-                  value={newAuthor}
-                  onChange={(e) => setNewAuthor(e.target.value)}
-                  className="w-full border px-2 py-1 rounded"
+                  placeholder="Yazar"
+                  value={entryAuthor}
+                  onChange={(e) => setEntryAuthor(e.target.value)}
+                  className="border px-2 py-1 rounded w-full"
                 />
                 <button
                   type="submit"
-                  className="bg-green-500 text-white px-4 py-1 rounded w-full"
+                  className="bg-green-500 text-white px-4 py-1 rounded"
                 >
                   Entry Ekle
                 </button>
               </form>
-            </>
+            </div>
           ) : (
             <p>Bir başlık seçin.</p>
           )}
