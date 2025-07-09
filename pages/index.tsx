@@ -1,5 +1,6 @@
 // pages/index.tsx
 import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
 import { createClient } from "@supabase/supabase-js";
 import { Recommendation } from "@/types/supabase";
 
@@ -9,12 +10,10 @@ const supabase = createClient(
 );
 
 export default function Home() {
+  const router = useRouter();
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [selectedRecommendation, setSelectedRecommendation] = useState<Recommendation | null>(null);
   const [entries, setEntries] = useState<any[]>([]);
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [author, setAuthor] = useState("");
   const [entryContent, setEntryContent] = useState("");
   const [entryAuthor, setEntryAuthor] = useState("");
   const [user, setUser] = useState<any>(null);
@@ -49,53 +48,6 @@ export default function Home() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     location.reload();
-  };
-
-  const handleRecommendationSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title || !content || !author) return;
-
-    const { data: existing, error: findError } = await supabase
-      .from("recommendations")
-      .select("*")
-      .ilike("title", title);
-
-    if (findError) {
-      console.error("Arama hatası:", findError);
-      return;
-    }
-
-    let recommendationId: string | null = null;
-
-    if (existing && existing.length > 0) {
-      recommendationId = existing[0].id;
-    } else {
-      const { data: inserted, error: insertError } = await supabase
-        .from("recommendations")
-        .insert({ title, content, author })
-        .select();
-
-      if (insertError) {
-        console.error("Başlık ekleme hatası:", insertError);
-        return;
-      }
-      recommendationId = inserted[0].id;
-    }
-
-    const { error: entryError } = await supabase.from("entries").insert({
-      content,
-      author,
-      recommendation_id: recommendationId,
-    });
-
-    if (entryError) {
-      console.error("Entry ekleme hatası:", entryError);
-    } else {
-      setTitle("");
-      setContent("");
-      setAuthor("");
-      location.reload();
-    }
   };
 
   const handleEntrySubmit = async (e: React.FormEvent) => {
@@ -141,7 +93,7 @@ export default function Home() {
               </button>
             </div>
           ) : (
-            <span>Giriş yapılmamış</span>
+            <button className="text-blue-500 underline" onClick={() => router.push("/login")}>Login</button>
           )}
         </div>
       </div>
