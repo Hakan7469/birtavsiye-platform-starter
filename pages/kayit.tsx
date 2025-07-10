@@ -1,82 +1,139 @@
-// pages/kayit.tsx
 import { useState } from "react";
-import { useRouter } from "next/router";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  "https://ypyadzojzjjmldtosnhm.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlweWFkem9qempqbWxkdG9zbmhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4NDEwODUsImV4cCI6MjA2NjQxNzA4NX0.tbEwxQ0Osj6gKwrXASh7AjKw-8silIOZ3z3Feymao1Q"
-);
 
 export default function Kayit() {
-  const router = useRouter();
-  const [adSoyad, setAdSoyad] = useState("");
-  const [telefon, setTelefon] = useState("");
+  const [nick, setNick] = useState("");
   const [email, setEmail] = useState("");
+  const [dogumGun, setDogumGun] = useState("");
+  const [dogumAy, setDogumAy] = useState("");
+  const [dogumYil, setDogumYil] = useState("");
+  const [cinsiyet, setCinsiyet] = useState("");
   const [sifre, setSifre] = useState("");
-  const [hata, setHata] = useState("");
+  const [sifreTekrar, setSifreTekrar] = useState("");
+  const [sozlesme, setSozlesme] = useState(false);
 
-  const handleKayit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password: sifre,
-      options: {
-        data: {
-          ad_soyad: adSoyad,
-          telefon,
-        },
-      },
-    });
-
-    if (error) {
-      setHata(error.message);
-    } else {
-      alert("Kayıt başarılı! Giriş sayfasına yönlendiriliyorsunuz.");
-      router.push("/login");
-    }
+    // Burada form doğrulama ve kayıt işlemleri yapılabilir
+    console.log({ nick, email, dogumGun, dogumAy, dogumYil, cinsiyet, sifre, sifreTekrar, sozlesme });
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <form onSubmit={handleKayit} className="bg-white p-8 rounded shadow-md w-80 space-y-4">
-        <h2 className="text-xl font-bold text-center">Yazar Kaydı</h2>
+    <div className="flex justify-center py-12 bg-white min-h-screen">
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-md space-y-4 border rounded-lg p-6 shadow"
+      >
+        <h2 className="text-xl font-bold text-gray-700">yeni kullanıcı kaydı</h2>
+
         <input
           type="text"
-          placeholder="Ad Soyad"
-          value={adSoyad}
-          onChange={(e) => setAdSoyad(e.target.value)}
+          placeholder="nick"
+          value={nick}
+          onChange={(e) => setNick(e.target.value)}
           className="w-full border p-2 rounded"
-          required
         />
-        <input
-          type="text"
-          placeholder="Telefon"
-          value={telefon}
-          onChange={(e) => setTelefon(e.target.value)}
-          className="w-full border p-2 rounded"
-          required
-        />
+
         <input
           type="email"
-          placeholder="E-posta"
+          placeholder="e-mail"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className="w-full border p-2 rounded"
-          required
         />
+
+        <div className="flex gap-2">
+          <select
+            value={dogumGun}
+            onChange={(e) => setDogumGun(e.target.value)}
+            className="border p-2 rounded w-full"
+          >
+            <option value="">gün</option>
+            {[...Array(31)].map((_, i) => (
+              <option key={i + 1} value={i + 1}>{i + 1}</option>
+            ))}
+          </select>
+
+          <select
+            value={dogumAy}
+            onChange={(e) => setDogumAy(e.target.value)}
+            className="border p-2 rounded w-full"
+          >
+            <option value="">ay</option>
+            {["ocak","şubat","mart","nisan","mayıs","haziran","temmuz","ağustos","eylül","ekim","kasım","aralık"].map((ay, i) => (
+              <option key={i + 1} value={i + 1}>{ay}</option>
+            ))}
+          </select>
+
+          <select
+            value={dogumYil}
+            onChange={(e) => setDogumYil(e.target.value)}
+            className="border p-2 rounded w-full"
+          >
+            <option value="">yıl</option>
+            {[...Array(70)].map((_, i) => {
+              const year = new Date().getFullYear() - i;
+              return <option key={year} value={year}>{year}</option>;
+            })}
+          </select>
+        </div>
+
+        <div className="flex gap-2">
+          {['kadın', 'erkek', 'başka', 'boşver'].map((secenek) => (
+            <button
+              type="button"
+              key={secenek}
+              onClick={() => setCinsiyet(secenek)}
+              className={`flex-1 py-2 rounded border ${cinsiyet === secenek ? 'bg-green-500 text-white' : 'bg-gray-100'}`}
+            >
+              {secenek}
+            </button>
+          ))}
+        </div>
+
         <input
           type="password"
-          placeholder="Şifre"
+          placeholder="şifre"
           value={sifre}
           onChange={(e) => setSifre(e.target.value)}
           className="w-full border p-2 rounded"
-          required
         />
-        {hata && <p className="text-red-500 text-sm">{hata}</p>}
-        <button type="submit" className="w-full bg-green-600 text-white py-2 rounded">
-          Kayıt Ol
+        <p className="text-xs text-gray-500">
+          şifre en az 8 karakter <br />
+          en az bir büyük harf <br />
+          bir küçük harf <br />
+          rakam içermelidir.
+        </p>
+
+        <input
+          type="password"
+          placeholder="şifre (tekrar)"
+          value={sifreTekrar}
+          onChange={(e) => setSifreTekrar(e.target.value)}
+          className="w-full border p-2 rounded"
+        />
+        <p className="text-xs text-gray-500">
+          en az 1 küçük harf <br />
+          en az 1 büyük harf <br />
+          en az 1 rakam <br />
+          en az 8 karakter
+        </p>
+
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={sozlesme}
+            onChange={(e) => setSozlesme(e.target.checked)}
+          />
+          <span className="text-sm">
+            kullanıcı sözleşmesini okudum ve kabul ediyorum
+          </span>
+        </label>
+
+        <button
+          type="submit"
+          className="w-full bg-green-500 text-white font-semibold py-2 rounded"
+        >
+          kayıt ol işte böyle
         </button>
       </form>
     </div>
