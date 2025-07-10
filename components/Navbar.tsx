@@ -1,5 +1,6 @@
 // components/Navbar.tsx
 import Link from "next/link";
+
 type NavbarProps = {
   user?: any;
 };
