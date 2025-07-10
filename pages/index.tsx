@@ -3,16 +3,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { createClient } from "@supabase/supabase-js";
 import { Recommendation } from "@/types/supabase";
-import Navbar from "@/components/Navbar"; // yol bileşen konumunuza göre değişebilir
-
-export default function HomePage() {
-  return (
-    <>
-      <Navbar />
-      {/* diğer içerikler */}
-    </>
-  );
-}
 
 const supabase = createClient(
   "https://ypyadzojzjjmldtosnhm.supabase.co",
