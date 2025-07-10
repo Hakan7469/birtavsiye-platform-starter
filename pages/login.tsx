@@ -24,7 +24,7 @@ export default function Login() {
     if (error) {
       setHata("E-posta veya şifre hatalı.");
     } else {
-      router.push("/profil");
+      router.push("/yazar");
     }
   };
 
@@ -32,7 +32,7 @@ export default function Login() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: "https://birtavsiye-platform-starter.vercel.app/profil", // ← Buraya canlı domaini yazdık
+        redirectTo: "https://birtavsiye.vercel.app/yazar", // Doğrudan yazar sayfasına yönlendir
       },
     });
 
