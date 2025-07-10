@@ -1,4 +1,10 @@
 // components/Navbar.tsx
+type NavbarProps = {
+  user?: any;
+};
+
+export default function Navbar({ user }: NavbarProps) {
+
 import Link from "next/link";
 
 export default function Navbar() {
