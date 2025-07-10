@@ -1,8 +1,8 @@
 // pages/index.tsx
 import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
 import { createClient } from "@supabase/supabase-js";
 import { Recommendation } from "@/types/supabase";
-import { useRouter } from "next/router";
 
 const supabase = createClient(
   "https://ypyadzojzjjmldtosnhm.supabase.co",
@@ -10,6 +10,7 @@ const supabase = createClient(
 );
 
 export default function Home() {
+  const router = useRouter();
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [selectedRecommendation, setSelectedRecommendation] = useState<Recommendation | null>(null);
   const [entries, setEntries] = useState<any[]>([]);
@@ -20,7 +21,6 @@ export default function Home() {
   const [entryAuthor, setEntryAuthor] = useState("");
   const [user, setUser] = useState<any>(null);
   const [search, setSearch] = useState("");
-  const router = useRouter();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -135,16 +135,20 @@ export default function Home() {
         />
 
         <div className="text-sm">
-          {!user ? (
-            <div className="flex items-center space-x-4">
-              <button onClick={() => router.push("/kayit")} className="text-blue-600 underline">Kayıt Ol</button>
-              <button onClick={() => router.push("/login")} className="text-blue-600 underline">Oturum Aç</button>
-            </div>
-          ) : (
+          {user ? (
             <div className="flex items-center space-x-2">
               <span className="text-gray-600">{user.email}</span>
-              <button className="text-red-500 underline" onClick={handleLogout}>Çıkış Yap</button>
+              <button className="text-red-500 underline" onClick={handleLogout}>
+                Çıkış Yap
+              </button>
             </div>
+          ) : (
+            <button
+              onClick={() => router.push("/login")}
+              className="text-blue-600 underline"
+            >
+              Oturum Aç
+            </button>
           )}
         </div>
       </div>
