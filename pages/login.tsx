@@ -32,7 +32,7 @@ export default function Login() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: "https://birtavsiye.vercel.app/profil", // ← Buraya canlı domaini yazdık
+        redirectTo: "https://birtavsiye-platform-starter.vercel.app/profil", // ← Buraya canlı domaini yazdık
       },
     });
 
