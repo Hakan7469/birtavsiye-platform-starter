@@ -32,7 +32,7 @@ export default function Login() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: "https://birtavsiye.vercel.app/profil",
+        redirectTo: "https://birtavsiye.vercel.app/profil", // ← Buraya canlı domaini yazdık
       },
     });
 
@@ -73,18 +73,6 @@ export default function Login() {
           className="w-full bg-blue-600 text-white py-2 rounded"
         >
           Giriş Yap
-        </button>
-
-        <div className="text-center text-sm text-gray-600">
-          Hesabın yok mu?
-        </div>
-
-        <button
-          type="button"
-          onClick={() => router.push("/signup")}
-          className="w-full bg-gray-300 text-black py-2 rounded"
-        >
-          Kayıt Ol
         </button>
 
         <div className="text-center text-sm text-gray-600">veya</div>
