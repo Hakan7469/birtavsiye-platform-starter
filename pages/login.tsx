@@ -32,7 +32,7 @@ export default function Login() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: "https://birtavsiye.vercel.app/profil", // Canlı link
+        redirectTo: "https://birtavsiye.vercel.app/profil",
       },
     });
 
@@ -43,7 +43,10 @@ export default function Login() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <form onSubmit={handleLogin} className="bg-white p-8 rounded shadow-md w-80 space-y-4">
+      <form
+        onSubmit={handleLogin}
+        className="bg-white p-8 rounded shadow-md w-80 space-y-4"
+      >
         <h2 className="text-xl font-bold text-center">Oturum Aç</h2>
 
         <input
@@ -65,8 +68,23 @@ export default function Login() {
 
         {hata && <p className="text-red-500 text-sm">{hata}</p>}
 
-        <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded">
+        <button
+          type="submit"
+          className="w-full bg-blue-600 text-white py-2 rounded"
+        >
           Giriş Yap
+        </button>
+
+        <div className="text-center text-sm text-gray-600">
+          Hesabın yok mu?
+        </div>
+
+        <button
+          type="button"
+          onClick={() => router.push("/signup")}
+          className="w-full bg-gray-300 text-black py-2 rounded"
+        >
+          Kayıt Ol
         </button>
 
         <div className="text-center text-sm text-gray-600">veya</div>
