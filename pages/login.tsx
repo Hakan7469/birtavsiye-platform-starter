@@ -1,38 +1,16 @@
-// pages/login.tsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "../utils/supabaseClient";
 import { useRouter } from "next/router";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  "https://ypyadzojzjjmldtosnhm.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlweWFkem9qempqbWxkdG9zbmhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4NDEwODUsImV4cCI6MjA2NjQxNzA4NX0.tbEwxQ0Osj6gKwrXASh7AjKw-8silIOZ3z3Feymao1Q"
-);
 
 export default function Login() {
-  const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [sifre, setSifre] = useState("");
   const [hata, setHata] = useState("");
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password: sifre,
-    });
-
-    if (error) {
-      setHata("E-posta veya şifre hatalı.");
-    } else {
-      router.push("/yazar");
-    }
-  };
+  const router = useRouter();
 
   const handleGoogleLogin = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: "https://birtavsiye-platform-starter.vercel.app/yazar", // Doğrudan yazar sayfasına yönlendir
+        redirectTo: "https://birtavsiye.vercel.app/profil",
       },
     });
 
@@ -43,48 +21,16 @@ export default function Login() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <form
-        onSubmit={handleLogin}
-        className="bg-white p-8 rounded shadow-md w-80 space-y-4"
-      >
-        <h2 className="text-xl font-bold text-center">Oturum Aç</h2>
-
-        <input
-          type="email"
-          placeholder="E-posta"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full border p-2 rounded"
-          required
-        />
-        <input
-          type="password"
-          placeholder="Şifre"
-          value={sifre}
-          onChange={(e) => setSifre(e.target.value)}
-          className="w-full border p-2 rounded"
-          required
-        />
-
-        {hata && <p className="text-red-500 text-sm">{hata}</p>}
-
+      <div className="bg-white p-8 rounded shadow-md text-center">
+        <h2 className="text-2xl font-bold mb-4">Giriş Yap</h2>
         <button
-          type="submit"
-          className="w-full bg-blue-600 text-white py-2 rounded"
-        >
-          Giriş Yap
-        </button>
-
-        <div className="text-center text-sm text-gray-600">veya</div>
-
-        <button
-          type="button"
           onClick={handleGoogleLogin}
-          className="w-full bg-red-500 text-white py-2 rounded"
+          className="bg-red-500 text-white px-4 py-2 rounded"
         >
           Google ile Giriş Yap
         </button>
-      </form>
+        {hata && <p className="text-red-500 mt-2">{hata}</p>}
+      </div>
     </div>
   );
 }
