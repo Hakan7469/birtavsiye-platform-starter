@@ -2,10 +2,11 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 import { createClient } from "@supabase/supabase-js";
+import RegisterModal from "../components/RegisterModal";
 
 const supabase = createClient(
   "https://ypyadzojzjjmldtosnhm.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlweWFkem9qempqbWxkdG9zbmhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4NDEwODUsImV4cCI6MjA2NjQxNzA4NX0.tbEwxQ0Osj6gKwrXASh7AjKw-8silIOZ3z3Feymao1Q"
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzIiwicmVmIjoieXB5YWR6b2p6amptbGR0b3NuaG0iLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc1MDg0MTA4NSwiZXhwIjoyMDY2NDE3MDg1fQ.tbEwxQ0Osj6gKwrXASh7AjKw-8silIOZ3z3Feymao1Q"
 );
 
 export default function Login() {
@@ -13,6 +14,7 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [sifre, setSifre] = useState("");
   const [hata, setHata] = useState("");
+  const [showRegister, setShowRegister] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +34,7 @@ export default function Login() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: "https://birtavsiye-platform-starter.vercel.app/yazar", // Doğrudan yazar sayfasına yönlendir
+        redirectTo: "https://birtavsiye-platform-starter.vercel.app/yazar",
       },
     });
 
@@ -84,7 +86,17 @@ export default function Login() {
         >
           Google ile Giriş Yap
         </button>
+
+        <button
+          type="button"
+          onClick={() => setShowRegister(true)}
+          className="w-full bg-gray-300 text-black py-2 rounded hover:bg-gray-400 mt-2"
+        >
+          Kayıt Ol
+        </button>
       </form>
+
+      <RegisterModal isOpen={showRegister} onClose={() => setShowRegister(false)} />
     </div>
   );
 }
