@@ -6,7 +6,7 @@ import { Recommendation } from "@/types/supabase";
 
 const supabase = createClient(
   "https://ypyadzojzjjmldtosnhm.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlweWFkem9qempqbGR0b3NuaG0iLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc1MDg0MTA4NSwiZXhwIjoyMDY2NDE3MDg1fQ.tbEwxQ0Osj6gKwrXASh7AjKw-8silIOZ3z3Feymao1Q"
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzIiwicmVmIjoieXB5YWR6b2p6amptbGR0b3NuaG0iLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc1MDg0MTA4NSwiZXhwIjoyMDY2NDE3MDg1fQ.tbEwxQ0Osj6gKwrXASh7AjKw-8silIOZ3z3Feymao1Q"
 );
 
 export default function Home() {
@@ -17,84 +17,105 @@ export default function Home() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [entryContent, setEntryContent] = useState("");
-  const [nickname, setNickname] = useState("");
   const [user, setUser] = useState<any>(null);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
-      const meta = user?.user_metadata;
-      const finalNickname = meta?.nickname || user?.email;
-      setNickname(finalNickname || "");
     });
 
     const fetchRecommendations = async () => {
       const { data, error } = await supabase.from("recommendations").select("*");
-      if (!error && data) setRecommendations(data);
+      if (error) console.error("Veri çekme hatası:", error);
+      else setRecommendations(data as Recommendation[]);
     };
     fetchRecommendations();
   }, []);
 
   useEffect(() => {
-    if (!selectedRecommendation) return;
     const fetchEntries = async () => {
+      if (!selectedRecommendation) return;
       const { data, error } = await supabase
         .from("entries")
         .select("*")
         .eq("recommendation_id", selectedRecommendation.id);
-      if (!error && data) setEntries(data);
+      if (error) console.error("Entry çekme hatası:", error);
+      else setEntries(data);
     };
     fetchEntries();
   }, [selectedRecommendation]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    localStorage.removeItem("nickname");
     location.reload();
   };
 
   const handleRecommendationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const nickname = localStorage.getItem("nickname");
     if (!title || !content || !nickname) return;
 
-    const { data: existing } = await supabase
+    const { data: existing, error: findError } = await supabase
       .from("recommendations")
       .select("*")
       .ilike("title", title);
+
+    if (findError) {
+      console.error("Arama hatası:", findError);
+      return;
+    }
 
     let recommendationId: string | null = null;
 
     if (existing && existing.length > 0) {
       recommendationId = existing[0].id;
     } else {
-      const { data: inserted } = await supabase
+      const { data: inserted, error: insertError } = await supabase
         .from("recommendations")
         .insert({ title, content, author: nickname })
         .select();
-      recommendationId = inserted?.[0]?.id;
+
+      if (insertError) {
+        console.error("Başlık ekleme hatası:", insertError);
+        return;
+      }
+      recommendationId = inserted[0].id;
     }
 
-    await supabase.from("entries").insert({
+    const { error: entryError } = await supabase.from("entries").insert({
       content,
       author: nickname,
       recommendation_id: recommendationId,
     });
 
-    setTitle("");
-    setContent("");
-    location.reload();
+    if (entryError) {
+      console.error("Entry ekleme hatası:", entryError);
+    } else {
+      setTitle("");
+      setContent("");
+      location.reload();
+    }
   };
 
   const handleEntrySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!entryContent || !selectedRecommendation || !nickname) return;
-    await supabase.from("entries").insert({
+    if (!entryContent || !selectedRecommendation) return;
+
+    const nickname = localStorage.getItem("nickname");
+    if (!nickname) return;
+
+    const { error } = await supabase.from("entries").insert({
       content: entryContent,
       author: nickname,
       recommendation_id: selectedRecommendation.id,
     });
-    setEntryContent("");
-    location.reload();
+    if (error) console.error("Entry ekleme hatası:", error);
+    else {
+      setEntryContent("");
+      location.reload();
+    }
   };
 
   const filteredRecommendations = recommendations.filter((rec) =>
@@ -118,7 +139,7 @@ export default function Home() {
         <div className="text-sm">
           {user ? (
             <div className="flex items-center space-x-2">
-              <span className="text-gray-600">{nickname}</span>
+              <span className="text-gray-600">{user.email}</span>
               <button className="text-red-500 underline" onClick={handleLogout}>
                 Çıkış Yap
               </button>
@@ -134,10 +155,10 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Alt Bloklar */}
+      {/* Alt Bloklar: Sol - Orta - Sağ */}
       <div className="flex flex-1 border border-black">
-        {/* Sol */}
-        <div className="w-1/4 border p-2 overflow-y-auto">
+        {/* Sol Blok */}
+        <div className="w-1/4 border border-black p-2 overflow-y-auto">
           <h2 className="font-bold mb-2">Tavsiyeler</h2>
           {filteredRecommendations.map((rec) => (
             <button
@@ -154,8 +175,8 @@ export default function Home() {
           ))}
         </div>
 
-        {/* Orta */}
-        <div className="w-2/4 border p-4">
+        {/* Orta Blok */}
+        <div className="w-2/4 border border-black p-4">
           {selectedRecommendation ? (
             <>
               <h2 className="text-lg font-bold mb-2">{selectedRecommendation.title}</h2>
@@ -171,6 +192,7 @@ export default function Home() {
                 </ul>
               )}
 
+              {/* Entry Ekleme Formu */}
               {user && (
                 <form onSubmit={handleEntrySubmit} className="space-y-2">
                   <textarea
@@ -193,29 +215,36 @@ export default function Home() {
           )}
         </div>
 
-        {/* Sağ */}
-        <div className="w-1/4 border p-4">Sağ Blok</div>
+        {/* Sağ Blok */}
+        <div className="w-1/4 border border-black p-4">
+          <p>Sağ Blok</p>
+        </div>
       </div>
 
+      {/* Tavsiye Oluşturma Formu (sadece yazarlar için) */}
       {user && (
-        <form onSubmit={handleRecommendationSubmit} className="p-4 border-t">
-          <h2 className="font-bold text-lg mb-2">Yeni Tavsiye Başlığı Ekle</h2>
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full border p-2 mb-2 rounded"
-            placeholder="Başlık"
-          />
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="w-full border p-2 mb-2 rounded"
-            placeholder="Tavsiyenizi yazın..."
-          />
-          <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">
-            Tavsiye Ekle
-          </button>
-        </form>
+        <div className="border-t border-black p-4 bg-gray-50">
+          <form onSubmit={handleRecommendationSubmit} className="space-y-2 max-w-2xl mx-auto">
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full border p-2 rounded"
+              placeholder="Yeni başlık"
+            />
+            <textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              className="w-full border p-2 rounded"
+              placeholder="İlk tavsiyeni yaz..."
+            />
+            <button
+              type="submit"
+              className="bg-blue-600 text-white px-4 py-2 rounded w-full"
+            >
+              Tavsiye Ekle
+            </button>
+          </form>
+        </div>
       )}
     </div>
   );
