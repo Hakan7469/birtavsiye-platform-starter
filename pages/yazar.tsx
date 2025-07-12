@@ -32,13 +32,16 @@ export default function Yazar() {
     );
   }
 
+  const nickname = user?.user_metadata?.nickname;
+  const displayName = nickname || user.email;
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
       <h1 className="text-2xl font-bold mb-4">Yazar Sayfası</h1>
 
       {user ? (
         <div className="space-y-3 text-center">
-          <p className="text-gray-700">Hoş geldin, <strong>{user.email}</strong></p>
+          <p className="text-gray-700">Hoş geldin, <strong>{displayName}</strong></p>
           <p className="text-gray-600">Buradan yeni tavsiye yazabilir ya da mevcut başlıklara ekleme yapabilirsin.</p>
 
           <button
