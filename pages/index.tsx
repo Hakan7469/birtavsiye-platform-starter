@@ -4,9 +4,10 @@ import { useRouter } from "next/router";
 import { createClient } from "@supabase/supabase-js";
 import { Recommendation } from "@/types/supabase";
 
+// Supabase client
 const supabase = createClient(
   "https://ypyadzojzjjmldtosnhm.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzIiwicmVmIjoieXB5YWR6b2p6amptbGR0b3NuaG0iLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc1MDg0MTA4NSwiZXhwIjoyMDY2NDE3MDg1fQ.tbEwxQ0Osj6gKwrXASh7AjKw-8silIOZ3z3Feymao1Q"
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlweWFkem9qempqbWxkdG9zbmhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4NDEwODUsImV4cCI6MjA2NjQxNzA4NX0.tbEwxQ0Osj6gKwrXASh7AjKw-8silIOZ3z3Feymao1Q"
 );
 
 export default function Home() {
@@ -20,19 +21,24 @@ export default function Home() {
   const [user, setUser] = useState<any>(null);
   const [search, setSearch] = useState("");
 
+  // Giriş yapan kullanıcıyı al
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
     });
 
-    const fetchRecommendations = async () => {
-      const { data, error } = await supabase.from("recommendations").select("*");
-      if (error) console.error("Veri çekme hatası:", error);
-      else setRecommendations(data as Recommendation[]);
-    };
     fetchRecommendations();
   }, []);
 
+  // Tavsiyeleri çek
+  const fetchRecommendations = async () => {
+    const { data, error } = await supabase.from("recommendations").select("*");
+    console.log("Gelen başlıklar:", data); // DEBUG
+    if (error) console.error("Veri çekme hatası:", error);
+    else setRecommendations(data as Recommendation[]);
+  };
+
+  // Entry'leri çek
   useEffect(() => {
     const fetchEntries = async () => {
       if (!selectedRecommendation) return;
@@ -46,12 +52,14 @@ export default function Home() {
     fetchEntries();
   }, [selectedRecommendation]);
 
+  // Oturumu kapat
   const handleLogout = async () => {
     await supabase.auth.signOut();
     localStorage.removeItem("nickname");
     location.reload();
   };
 
+  // Tavsiye ekleme işlemi
   const handleRecommendationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const nickname = localStorage.getItem("nickname");
@@ -99,6 +107,7 @@ export default function Home() {
     }
   };
 
+  // Entry ekleme
   const handleEntrySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!entryContent || !selectedRecommendation) return;
@@ -118,8 +127,9 @@ export default function Home() {
     }
   };
 
+  // Filtreli başlık listesi
   const filteredRecommendations = recommendations.filter((rec) =>
-    rec.title.toLowerCase().includes(search.toLowerCase())
+    rec.title?.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
