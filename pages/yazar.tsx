@@ -21,8 +21,9 @@ export default function Yazar() {
       } else {
         setUser(data.user);
         const meta = data.user.user_metadata;
-        setNickname(meta?.nickname || "");
-        localStorage.setItem("nickname", meta?.nickname || data.user.email);
+        const finalNickname = meta?.nickname || data.user.email;
+        setNickname(finalNickname);
+        localStorage.setItem("nickname", finalNickname);
       }
       setLoading(false);
     });
@@ -40,7 +41,7 @@ export default function Yazar() {
 
       {user ? (
         <div className="space-y-3 text-center">
-          <p className="text-gray-700">Hoş geldin, <strong>{nickname || user.email}</strong></p>
+          <p className="text-gray-700">Hoş geldin, <strong>{nickname}</strong></p>
           <p className="text-gray-600">Buradan yeni tavsiye yazabilir ya da mevcut başlıklara ekleme yapabilirsin.</p>
 
           <button
