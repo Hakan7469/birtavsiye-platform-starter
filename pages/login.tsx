@@ -1,4 +1,3 @@
-// pages/login.tsx
 import { useState } from "react";
 import { useRouter } from "next/router";
 import { createClient } from "@supabase/supabase-js";
@@ -18,13 +17,15 @@ export default function Login() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setHata("");
+
     const { error } = await supabase.auth.signInWithPassword({
-      email,
+      email: email.trim().toLowerCase(),
       password: sifre,
     });
 
     if (error) {
-      setHata("E-posta veya şifre hatalı.");
+      setHata("Giriş başarısız: " + error.message);
     } else {
       router.push("/yazar");
     }
@@ -96,7 +97,10 @@ export default function Login() {
         </button>
       </form>
 
-      <RegisterModal isOpen={showRegister} onClose={() => setShowRegister(false)} />
+      <RegisterModal
+        isOpen={showRegister}
+        onClose={() => setShowRegister(false)}
+      />
     </div>
   );
 }
