@@ -6,7 +6,7 @@ import { Recommendation } from "@/types/supabase";
 
 const supabase = createClient(
   "https://ypyadzojzjjmldtosnhm.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlweWFkem9qempqbWxkdG9zbmhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4NDEwODUsImV4cCI6MjA2NjQxNzA4NX0.tbEwxQ0Osj6gKwrXASh7AjKw-8silIOZ3z3Feymao1Q"
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlweWFkem9qempqbGR0b3NuaG0iLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc1MDg0MTA4NSwiZXhwIjoyMDY2NDE3MDg1fQ.tbEwxQ0Osj6gKwrXASh7AjKw-8silIOZ3z3Feymao1Q"
 );
 
 export default function Home() {
@@ -16,15 +16,18 @@ export default function Home() {
   const [entries, setEntries] = useState<any[]>([]);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [author, setAuthor] = useState("");
   const [entryContent, setEntryContent] = useState("");
-  const [entryAuthor, setEntryAuthor] = useState("");
   const [user, setUser] = useState<any>(null);
   const [search, setSearch] = useState("");
+  const [nickname, setNickname] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
       setUser(user);
+      if (user) {
+        const { data } = await supabase.auth.getUser();
+        setNickname(data.user?.user_metadata?.nickname || null);
+      }
     });
 
     const fetchRecommendations = async () => {
@@ -55,7 +58,7 @@ export default function Home() {
 
   const handleRecommendationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !content || !author) return;
+    if (!title || !content || !nickname) return;
 
     const { data: existing, error: findError } = await supabase
       .from("recommendations")
@@ -74,7 +77,7 @@ export default function Home() {
     } else {
       const { data: inserted, error: insertError } = await supabase
         .from("recommendations")
-        .insert({ title, content, author })
+        .insert({ title, content, author: nickname })
         .select();
 
       if (insertError) {
@@ -86,7 +89,7 @@ export default function Home() {
 
     const { error: entryError } = await supabase.from("entries").insert({
       content,
-      author,
+      author: nickname,
       recommendation_id: recommendationId,
     });
 
@@ -95,23 +98,21 @@ export default function Home() {
     } else {
       setTitle("");
       setContent("");
-      setAuthor("");
       location.reload();
     }
   };
 
   const handleEntrySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!entryContent || !entryAuthor || !selectedRecommendation) return;
+    if (!entryContent || !nickname || !selectedRecommendation) return;
     const { error } = await supabase.from("entries").insert({
       content: entryContent,
-      author: entryAuthor,
+      author: nickname,
       recommendation_id: selectedRecommendation.id,
     });
     if (error) console.error("Entry ekleme hatası:", error);
     else {
       setEntryContent("");
-      setEntryAuthor("");
       location.reload();
     }
   };
@@ -137,7 +138,7 @@ export default function Home() {
         <div className="text-sm">
           {user ? (
             <div className="flex items-center space-x-2">
-              <span className="text-gray-600">{user.email}</span>
+              <span className="text-gray-600">{nickname || user.email}</span>
               <button className="text-red-500 underline" onClick={handleLogout}>
                 Çıkış Yap
               </button>
@@ -190,27 +191,22 @@ export default function Home() {
                 </ul>
               )}
 
-              {/* Entry Ekleme Formu */}
-              <form onSubmit={handleEntrySubmit} className="space-y-2">
-                <textarea
-                  value={entryContent}
-                  onChange={(e) => setEntryContent(e.target.value)}
-                  className="w-full border p-2 rounded"
-                  placeholder="Tavsiyeni yaz..."
-                />
-                <input
-                  value={entryAuthor}
-                  onChange={(e) => setEntryAuthor(e.target.value)}
-                  className="w-full border p-2 rounded"
-                  placeholder="Yazar adı"
-                />
-                <button
-                  type="submit"
-                  className="bg-green-500 text-white px-4 py-2 rounded w-full"
-                >
-                  Entry Ekle
-                </button>
-              </form>
+              {user && (
+                <form onSubmit={handleEntrySubmit} className="space-y-2">
+                  <textarea
+                    value={entryContent}
+                    onChange={(e) => setEntryContent(e.target.value)}
+                    className="w-full border p-2 rounded"
+                    placeholder="Tavsiyeni yaz..."
+                  />
+                  <button
+                    type="submit"
+                    className="bg-green-500 text-white px-4 py-2 rounded w-full"
+                  >
+                    Entry Ekle
+                  </button>
+                </form>
+              )}
             </>
           ) : (
             <p className="text-gray-600">Bir başlık seçin.</p>
