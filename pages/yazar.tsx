@@ -1,3 +1,4 @@
+// pages/yazar.tsx
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { createClient } from "@supabase/supabase-js";
@@ -21,6 +22,7 @@ export default function Yazar() {
         setUser(data.user);
         const meta = data.user.user_metadata;
         setNickname(meta?.nickname || "");
+        localStorage.setItem("nickname", meta?.nickname || data.user.email);
       }
       setLoading(false);
     });
@@ -28,6 +30,7 @@ export default function Yazar() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    localStorage.removeItem("nickname");
     router.push("/");
   };
 
