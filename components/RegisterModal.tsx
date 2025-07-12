@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useRouter } from 'next/router';
 import { supabase } from '../lib/supabaseClient';
 
 type Props = {
@@ -7,6 +8,7 @@ type Props = {
 };
 
 export default function RegisterModal({ isOpen, onClose }: Props) {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -36,7 +38,7 @@ export default function RegisterModal({ isOpen, onClose }: Props) {
           nickname,
           birthdate
         },
-        emailRedirectTo: 'https://birtavsiye-platform-starter.vercel.app/auth/callback' // ✅ Kritik yönlendirme
+        emailRedirectTo: 'https://birtavsiye-platform-starter.vercel.app/auth/callback' // 🔁 Doğrulama sonrası yönlendirme
       }
     });
 
@@ -45,10 +47,10 @@ export default function RegisterModal({ isOpen, onClose }: Props) {
     } else {
       setSuccess(true);
 
-      // ✅ 3 saniye sonra modal kapansın ve login sayfasına yönlendirilsin
+      // ✅ 3 saniye sonra login sayfasına yönlendir
       setTimeout(() => {
-        onClose();
-        window.location.href = "/login";
+        onClose(); // modal kapansın
+        router.push('/login'); // login sayfasına yönlendir
       }, 3000);
     }
   };
