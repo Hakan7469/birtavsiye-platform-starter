@@ -31,7 +31,7 @@ export default function RegisterModal({ isOpen, onClose }: Props) {
     }
 
     const { error } = await supabase.auth.signUp({
-      email,
+      email: email.trim().toLowerCase(),
       password,
       options: {
         data: {
