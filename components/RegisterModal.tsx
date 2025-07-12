@@ -20,6 +20,11 @@ export default function RegisterModal({ isOpen, onClose }: Props) {
   const handleRegister = async () => {
     setError('');
 
+    if (!nickname.trim()) {
+      setError('Lütfen bir nickname girin.');
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError('Şifreler uyuşmuyor.');
       return;
@@ -38,7 +43,7 @@ export default function RegisterModal({ isOpen, onClose }: Props) {
           nickname,
           birthdate
         },
-        emailRedirectTo: 'https://birtavsiye-platform-starter.vercel.app/auth/callback' // 🔁 Doğrulama sonrası yönlendirme
+        emailRedirectTo: 'https://birtavsiye-platform-starter.vercel.app/auth/callback'
       }
     });
 
@@ -46,11 +51,9 @@ export default function RegisterModal({ isOpen, onClose }: Props) {
       setError(error.message);
     } else {
       setSuccess(true);
-
-      // ✅ 3 saniye sonra login sayfasına yönlendir
       setTimeout(() => {
-        onClose(); // modal kapansın
-        router.push('/login'); // login sayfasına yönlendir
+        onClose();
+        router.push('/login');
       }, 3000);
     }
   };
