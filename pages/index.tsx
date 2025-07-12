@@ -118,11 +118,9 @@ export default function Home() {
     }
   };
 
-  const filteredRecommendations = recommendations
-    .filter((rec) => rec.title) // null başlıkları at
-    .filter((rec) =>
-      rec.title!.toLowerCase().includes(search.toLowerCase())
-    );
+  const filteredRecommendations = recommendations.filter((rec) =>
+    rec.title.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div className="min-h-screen flex flex-col border border-black">
