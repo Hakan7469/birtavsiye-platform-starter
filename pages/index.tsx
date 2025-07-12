@@ -17,34 +17,33 @@ export default function Home() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [entryContent, setEntryContent] = useState("");
+  const [nickname, setNickname] = useState("");
   const [user, setUser] = useState<any>(null);
-  const [nickname, setNickname] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
-      const finalNickname = user?.user_metadata?.nickname || user?.email || null;
-      setNickname(finalNickname);
+      const meta = user?.user_metadata;
+      const finalNickname = meta?.nickname || user?.email;
+      setNickname(finalNickname || "");
     });
 
     const fetchRecommendations = async () => {
       const { data, error } = await supabase.from("recommendations").select("*");
-      if (error) console.error("Veri çekme hatası:", error);
-      else setRecommendations(data as Recommendation[]);
+      if (!error && data) setRecommendations(data);
     };
     fetchRecommendations();
   }, []);
 
   useEffect(() => {
+    if (!selectedRecommendation) return;
     const fetchEntries = async () => {
-      if (!selectedRecommendation) return;
       const { data, error } = await supabase
         .from("entries")
         .select("*")
         .eq("recommendation_id", selectedRecommendation.id);
-      if (error) console.error("Entry çekme hatası:", error);
-      else setEntries(data);
+      if (!error && data) setEntries(data);
     };
     fetchEntries();
   }, [selectedRecommendation]);
@@ -58,61 +57,44 @@ export default function Home() {
     e.preventDefault();
     if (!title || !content || !nickname) return;
 
-    const { data: existing, error: findError } = await supabase
+    const { data: existing } = await supabase
       .from("recommendations")
       .select("*")
       .ilike("title", title);
-
-    if (findError) {
-      console.error("Arama hatası:", findError);
-      return;
-    }
 
     let recommendationId: string | null = null;
 
     if (existing && existing.length > 0) {
       recommendationId = existing[0].id;
     } else {
-      const { data: inserted, error: insertError } = await supabase
+      const { data: inserted } = await supabase
         .from("recommendations")
         .insert({ title, content, author: nickname })
         .select();
-
-      if (insertError) {
-        console.error("Başlık ekleme hatası:", insertError);
-        return;
-      }
-      recommendationId = inserted[0].id;
+      recommendationId = inserted?.[0]?.id;
     }
 
-    const { error: entryError } = await supabase.from("entries").insert({
+    await supabase.from("entries").insert({
       content,
       author: nickname,
       recommendation_id: recommendationId,
     });
 
-    if (entryError) {
-      console.error("Entry ekleme hatası:", entryError);
-    } else {
-      setTitle("");
-      setContent("");
-      location.reload();
-    }
+    setTitle("");
+    setContent("");
+    location.reload();
   };
 
   const handleEntrySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!entryContent || !selectedRecommendation || !nickname) return;
-    const { error } = await supabase.from("entries").insert({
+    await supabase.from("entries").insert({
       content: entryContent,
       author: nickname,
       recommendation_id: selectedRecommendation.id,
     });
-    if (error) console.error("Entry ekleme hatası:", error);
-    else {
-      setEntryContent("");
-      location.reload();
-    }
+    setEntryContent("");
+    location.reload();
   };
 
   const filteredRecommendations = recommendations.filter((rec) =>
@@ -121,6 +103,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col border border-black">
+      {/* Üst Blok */}
       <div className="h-[120px] border border-black flex items-center justify-between px-4">
         <h1 className="text-xl font-bold">Birtavsiye</h1>
 
@@ -151,8 +134,10 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Alt Bloklar */}
       <div className="flex flex-1 border border-black">
-        <div className="w-1/4 border border-black p-2 overflow-y-auto">
+        {/* Sol */}
+        <div className="w-1/4 border p-2 overflow-y-auto">
           <h2 className="font-bold mb-2">Tavsiyeler</h2>
           {filteredRecommendations.map((rec) => (
             <button
@@ -169,7 +154,8 @@ export default function Home() {
           ))}
         </div>
 
-        <div className="w-2/4 border border-black p-4">
+        {/* Orta */}
+        <div className="w-2/4 border p-4">
           {selectedRecommendation ? (
             <>
               <h2 className="text-lg font-bold mb-2">{selectedRecommendation.title}</h2>
@@ -185,7 +171,7 @@ export default function Home() {
                 </ul>
               )}
 
-              {user ? (
+              {user && (
                 <form onSubmit={handleEntrySubmit} className="space-y-2">
                   <textarea
                     value={entryContent}
@@ -200,8 +186,6 @@ export default function Home() {
                     Entry Ekle
                   </button>
                 </form>
-              ) : (
-                <p className="text-sm text-gray-500 italic">Entry eklemek için giriş yapmalısınız.</p>
               )}
             </>
           ) : (
@@ -209,10 +193,30 @@ export default function Home() {
           )}
         </div>
 
-        <div className="w-1/4 border border-black p-4">
-          <p>Sağ Blok</p>
-        </div>
+        {/* Sağ */}
+        <div className="w-1/4 border p-4">Sağ Blok</div>
       </div>
+
+      {user && (
+        <form onSubmit={handleRecommendationSubmit} className="p-4 border-t">
+          <h2 className="font-bold text-lg mb-2">Yeni Tavsiye Başlığı Ekle</h2>
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="w-full border p-2 mb-2 rounded"
+            placeholder="Başlık"
+          />
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            className="w-full border p-2 mb-2 rounded"
+            placeholder="Tavsiyenizi yazın..."
+          />
+          <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">
+            Tavsiye Ekle
+          </button>
+        </form>
+      )}
     </div>
   );
 }
