@@ -1,4 +1,3 @@
-// pages/yazar.tsx
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { createClient } from "@supabase/supabase-js";
@@ -10,30 +9,27 @@ const supabase = createClient(
 
 export default function Yazar() {
   const [user, setUser] = useState<any>(null);
+  const [nickname, setNickname] = useState("");
   const router = useRouter();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data, error }) => {
+    supabase.auth.getUser().then(async ({ data, error }) => {
       if (error || !data.user) {
         router.push("/login");
       } else {
         setUser(data.user);
+        const meta = data.user.user_metadata;
+        setNickname(meta?.nickname || "");
       }
       setLoading(false);
     });
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p>Yükleniyor...</p>
-      </div>
-    );
-  }
-
-  const nickname = user?.user_metadata?.nickname;
-  const displayName = nickname || user.email;
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push("/");
+  };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
@@ -41,7 +37,7 @@ export default function Yazar() {
 
       {user ? (
         <div className="space-y-3 text-center">
-          <p className="text-gray-700">Hoş geldin, <strong>{displayName}</strong></p>
+          <p className="text-gray-700">Hoş geldin, <strong>{nickname || user.email}</strong></p>
           <p className="text-gray-600">Buradan yeni tavsiye yazabilir ya da mevcut başlıklara ekleme yapabilirsin.</p>
 
           <button
@@ -49,6 +45,12 @@ export default function Yazar() {
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded shadow"
           >
             Ana Sayfaya Git
+          </button>
+          <button
+            onClick={handleLogout}
+            className="mt-2 px-4 py-2 bg-red-500 text-white rounded shadow"
+          >
+            Çıkış Yap
           </button>
         </div>
       ) : (
