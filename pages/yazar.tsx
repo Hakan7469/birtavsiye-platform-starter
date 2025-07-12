@@ -41,8 +41,13 @@ export default function Yazar() {
 
       {user ? (
         <div className="space-y-3 text-center">
-          <p className="text-gray-700">Hoş geldin, <strong>{nickname}</strong></p>
-          <p className="text-gray-600">Buradan yeni tavsiye yazabilir ya da mevcut başlıklara ekleme yapabilirsin.</p>
+          <p className="text-gray-700">
+            Hoş geldin, <strong>{nickname}</strong>
+          </p>
+          <p className="text-gray-600">
+            Buradan yeni tavsiye yazabilir ya da mevcut başlıklara ekleme
+            yapabilirsin.
+          </p>
 
           <button
             onClick={() => router.push("/")}
