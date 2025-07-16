@@ -5,7 +5,7 @@ import { Recommendation } from "@/types/supabase";
 
 const supabase = createClient(
   "https://ypyadzojzjjmldtosnhm.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlweWFkem9qempqbGR0b3NuaG0iLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc1MDg0MTA4NSwiZXhwIjoyMDY2NDE3MDg1fQ.tbEwxQ0Osj6gKwrXASh7AjKw-8silIOZ3z3Feymao1Q"
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzIiwicmVmIjoieXB5YWR6b2p6amptbGR0b3NuaG0iLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc1MDg0MTA4NSwiZXhwIjoyMDY2NDE3MDg1fQ.tbEwxQ0Osj6gKwrXASh7AjKw-8silIOZ3z3Feymao1Q"
 );
 
 export default function Home() {
@@ -26,6 +26,7 @@ export default function Home() {
 
     const fetchRecommendations = async () => {
       const { data, error } = await supabase.from("recommendations").select("*");
+      console.log("Gelen başlıklar:", data);
       if (error) console.error("Veri çekme hatası:", error);
       else setRecommendations(data as Recommendation[]);
     };
@@ -122,24 +123,24 @@ export default function Home() {
   );
 
   return (
-    <div className="min-h-screen flex flex-col bg-pastelPurple text-textDark font-sans">
+    <div className="min-h-screen flex flex-col font-sans bg-softGray text-textDark">
       {/* Üst Blok */}
-      <div className="h-[100px] flex items-center justify-between px-6 border-b border-borderSoft bg-white shadow">
-        <h1 className="text-2xl font-bold text-textDark">Birtavsiye</h1>
+      <div className="h-[100px] flex items-center justify-between px-6 shadow bg-white">
+        <h1 className="text-2xl font-bold">Birtavsiye</h1>
 
         <input
           type="text"
           placeholder="Tavsiye ara..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="border border-borderSoft px-3 py-1 rounded-xl focus:outline-none w-64"
+          className="border border-borderSoft px-4 py-2 rounded-full w-64 text-sm"
         />
 
         <div className="text-sm">
           {user ? (
-            <div className="flex items-center space-x-3">
-              <span className="text-gray-700">{user.email}</span>
-              <button className="text-red-500 underline" onClick={handleLogout}>
+            <div className="flex items-center space-x-2">
+              <span className="text-textDark">{user.email}</span>
+              <button className="text-blue-600 underline" onClick={handleLogout}>
                 Çıkış Yap
               </button>
             </div>
@@ -157,15 +158,15 @@ export default function Home() {
       {/* Alt Bloklar: Sol - Orta - Sağ */}
       <div className="flex flex-1">
         {/* Sol Blok */}
-        <div className="w-1/4 bg-pastelLilac p-4 overflow-y-auto border-r border-borderSoft">
-          <h2 className="font-bold text-lg mb-3">Tavsiyeler</h2>
+        <div className="w-1/4 p-4 bg-pastelLilac overflow-y-auto">
+          <h2 className="text-lg font-bold mb-4 text-textDark">Tavsiyeler</h2>
           {filteredRecommendations.map((rec) => (
             <button
               key={rec.id}
-              className={`block w-full text-left px-3 py-2 mb-2 rounded-xl transition ${
+              className={`block w-full text-left px-3 py-2 mb-2 rounded-xl transition font-medium shadow ${
                 selectedRecommendation?.id === rec.id
-                  ? "bg-white font-semibold shadow"
-                  : "bg-pastelPurple hover:bg-white"
+                  ? "bg-white text-textDark"
+                  : "bg-pastelLilac hover:bg-white"
               }`}
               onClick={() => setSelectedRecommendation(rec)}
             >
@@ -175,23 +176,26 @@ export default function Home() {
         </div>
 
         {/* Orta Blok */}
-        <div className="w-2/4 bg-white p-6 border-r border-borderSoft overflow-y-auto">
+        <div className="w-2/4 p-6">
           {selectedRecommendation ? (
             <>
-              <h2 className="text-xl font-bold mb-4">{selectedRecommendation.title}</h2>
+              <h2 className="text-xl font-bold mb-4 text-textDark">
+                {selectedRecommendation.title}
+              </h2>
+              <p className="mb-4 text-sm text-gray-700">
+                {selectedRecommendation.content} — <span className="text-xs text-gray-500">{selectedRecommendation.author}</span>
+              </p>
               {entries.length === 0 ? (
                 <p className="text-gray-500">Bu başlık altında henüz entry yok.</p>
               ) : (
-                <ul className="mb-6 space-y-3">
+                <ul className="mb-4 space-y-2">
                   {entries.map((entry, index) => (
-                    <li key={index} className="bg-softGray p-3 rounded-xl shadow-sm">
-                      <p>{entry.content}</p>
-                      <span className="text-sm text-gray-600 block mt-1">{entry.author}</span>
+                    <li key={index} className="border border-borderSoft bg-white p-3 rounded-xl shadow-sm">
+                      {entry.content} — <span className="text-sm text-gray-500">{entry.author}</span>
                     </li>
                   ))}
                 </ul>
               )}
-
               {user && (
                 <form onSubmit={handleEntrySubmit} className="space-y-2">
                   <textarea
@@ -202,7 +206,7 @@ export default function Home() {
                   />
                   <button
                     type="submit"
-                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl w-full"
+                    className="bg-green-500 text-white px-4 py-2 rounded-xl w-full hover:bg-green-600"
                   >
                     Entry Ekle
                   </button>
@@ -215,14 +219,14 @@ export default function Home() {
         </div>
 
         {/* Sağ Blok */}
-        <div className="w-1/4 bg-pastelBlue p-6">
-          <p className="text-gray-700">Yan içerik veya reklam alanı</p>
+        <div className="w-1/4 p-6 bg-pastelBlue">
+          <p className="text-textDark">Yan içerik veya reklam alanı</p>
         </div>
       </div>
 
-      {/* Alt Tavsiye Formu */}
+      {/* Tavsiye Oluşturma Formu (sadece yazarlar için) */}
       {user && (
-        <div className="border-t border-borderSoft bg-white p-6">
+        <div className="border-t border-borderSoft p-6 bg-white">
           <form onSubmit={handleRecommendationSubmit} className="space-y-2 max-w-3xl mx-auto">
             <input
               value={title}
@@ -238,7 +242,7 @@ export default function Home() {
             />
             <button
               type="submit"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl w-full"
+              className="bg-blue-600 text-white px-6 py-2 rounded-xl w-full hover:bg-blue-700"
             >
               Tavsiye Ekle
             </button>
