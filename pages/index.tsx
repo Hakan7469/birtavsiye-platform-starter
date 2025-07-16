@@ -6,7 +6,7 @@ import { Recommendation } from "@/types/supabase";
 
 const supabase = createClient(
   "https://ypyadzojzjjmldtosnhm.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzIiwicmVmIjoieXB5YWR6b2p6amptbGR0b3NuaG0iLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc1MDg0MTA4NSwiZXhwIjoyMDY2NDE3MDg1fQ.tbEwxQ0Osj6gKwrXASh7AjKw-8silIOZ3z3Feymao1Q"
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlweWFkem9qempqbWxkdG9zbmhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4NDEwODUsImV4cCI6MjA2NjQxNzA4NX0.tbEwxQ0Osj6gKwrXASh7AjKw-8silIOZ3z3Feymao1Q"
 );
 
 export default function Home() {
@@ -119,11 +119,12 @@ export default function Home() {
   };
 
   const filteredRecommendations = recommendations.filter((rec) =>
-    rec.title.toLowerCase().includes(search.toLowerCase())
+    rec.title?.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
     <div className="min-h-screen flex flex-col border border-black">
+      {/* Üst Blok */}
       <div className="h-[120px] border border-black flex items-center justify-between px-4">
         <h1 className="text-xl font-bold">Birtavsiye</h1>
 
@@ -154,6 +155,7 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Alt Bloklar: Sol - Orta - Sağ */}
       <div className="flex flex-1 border border-black">
         {/* Sol Blok */}
         <div className="w-1/4 border border-black p-2 overflow-y-auto">
@@ -184,12 +186,14 @@ export default function Home() {
                 <ul className="mb-4">
                   {entries.map((entry, index) => (
                     <li key={index} className="border p-2 mb-2 rounded">
-                      {entry.content} — <span className="text-sm text-gray-600">{entry.author}</span>
+                      {entry.content} —{" "}
+                      <span className="text-sm text-gray-600">{entry.author}</span>
                     </li>
                   ))}
                 </ul>
               )}
 
+              {/* Entry Ekleme Formu */}
               {user && (
                 <form onSubmit={handleEntrySubmit} className="space-y-2">
                   <textarea
@@ -218,9 +222,13 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Tavsiye Oluşturma Formu */}
       {user && (
         <div className="border-t border-black p-4 bg-gray-50">
-          <form onSubmit={handleRecommendationSubmit} className="space-y-2 max-w-2xl mx-auto">
+          <form
+            onSubmit={handleRecommendationSubmit}
+            className="space-y-2 max-w-2xl mx-auto"
+          >
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
