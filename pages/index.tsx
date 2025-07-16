@@ -1,19 +1,30 @@
+// pages/index.tsx
 import { useEffect, useState } from "react";
-import { supabase } from "../utils/supabaseClient";
-import { Recommendation, Entry } from "../types/supabase";
-import { useSession } from "@supabase/auth-helpers-react";
 import { useRouter } from "next/router";
+import { createClient } from "@supabase/supabase-js";
+import { Recommendation } from "@/types/supabase";
+
+const supabase = createClient(
+  "https://ypyadzojzjjmldtosnhm.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzIiwicmVmIjoieXB5YWR6b2p6amptbGR0b3NuaG0iLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc1MDg0MTA4NSwiZXhwIjoyMDY2NDE3MDg1fQ.tbEwxQ0Osj6gKwrXASh7AjKw-8silIOZ3z3Feymao1Q"
+);
 
 export default function Home() {
+  const router = useRouter();
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [selectedRecommendation, setSelectedRecommendation] = useState<Recommendation | null>(null);
-  const [entries, setEntries] = useState<Entry[]>([]);
-  const [newEntry, setNewEntry] = useState("");
-  const [newRecommendation, setNewRecommendation] = useState("");
-  const session = useSession();
-  const router = useRouter();
+  const [entries, setEntries] = useState<any[]>([]);
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [entryContent, setEntryContent] = useState("");
+  const [user, setUser] = useState<any>(null);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+    });
+
     const fetchRecommendations = async () => {
       const { data, error } = await supabase.from("recommendations").select("*");
       if (error) console.error("Veri çekme hatası:", error);
@@ -24,93 +35,136 @@ export default function Home() {
 
   useEffect(() => {
     const fetchEntries = async () => {
-      if (selectedRecommendation) {
-        const { data, error } = await supabase
-          .from("entries")
-          .select("*")
-          .eq("recommendation_id", selectedRecommendation.id);
-        if (error) console.error("Entry çekme hatası:", error);
-        else setEntries(data as Entry[]);
-      }
+      if (!selectedRecommendation) return;
+      const { data, error } = await supabase
+        .from("entries")
+        .select("*")
+        .eq("recommendation_id", selectedRecommendation.id);
+      if (error) console.error("Entry çekme hatası:", error);
+      else setEntries(data);
     };
     fetchEntries();
   }, [selectedRecommendation]);
 
-  const handleAddEntry = async () => {
-    if (!newEntry.trim() || !selectedRecommendation) return;
-    const { data, error } = await supabase.from("entries").insert([
-      {
-        content: newEntry,
-        recommendation_id: selectedRecommendation.id,
-        author: session?.user?.user_metadata?.nickname || "Anonim",
-      },
-    ]);
-    if (error) {
-      console.error("Entry ekleme hatası:", error);
-    } else {
-      setNewEntry("");
-      setEntries((prev) => [...prev, ...(data as Entry[])]);
-    }
-  };
-
-  const handleAddRecommendation = async () => {
-    if (!newRecommendation.trim()) return;
-    const { data, error } = await supabase.from("recommendations").insert([
-      {
-        title: newRecommendation,
-        content: "",
-        author: session?.user?.user_metadata?.nickname || "Anonim",
-      },
-    ]);
-    if (error) {
-      console.error("Başlık ekleme hatası:", error);
-    } else {
-      setNewRecommendation("");
-      setRecommendations((prev) => [...prev, ...(data as Recommendation[])]);
-    }
-  };
-
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    router.reload();
+    localStorage.removeItem("nickname");
+    location.reload();
   };
 
-  const filteredRecommendations = recommendations.filter((rec) => rec.title);
+  const handleRecommendationSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const nickname = localStorage.getItem("nickname");
+    if (!title || !content || !nickname) return;
+
+    const { data: existing, error: findError } = await supabase
+      .from("recommendations")
+      .select("*")
+      .ilike("title", title);
+
+    if (findError) {
+      console.error("Arama hatası:", findError);
+      return;
+    }
+
+    let recommendationId: string | null = null;
+
+    if (existing && existing.length > 0) {
+      recommendationId = existing[0].id;
+    } else {
+      const { data: inserted, error: insertError } = await supabase
+        .from("recommendations")
+        .insert({ title, content, author: nickname })
+        .select();
+
+      if (insertError) {
+        console.error("Başlık ekleme hatası:", insertError);
+        return;
+      }
+      recommendationId = inserted[0].id;
+    }
+
+    const { error: entryError } = await supabase.from("entries").insert({
+      content,
+      author: nickname,
+      recommendation_id: recommendationId,
+    });
+
+    if (entryError) {
+      console.error("Entry ekleme hatası:", entryError);
+    } else {
+      setTitle("");
+      setContent("");
+      location.reload();
+    }
+  };
+
+  const handleEntrySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!entryContent || !selectedRecommendation) return;
+
+    const nickname = localStorage.getItem("nickname");
+    if (!nickname) return;
+
+    const { error } = await supabase.from("entries").insert({
+      content: entryContent,
+      author: nickname,
+      recommendation_id: selectedRecommendation.id,
+    });
+    if (error) console.error("Entry ekleme hatası:", error);
+    else {
+      setEntryContent("");
+      location.reload();
+    }
+  };
+
+  const filteredRecommendations = recommendations.filter((rec) =>
+    rec.title.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
-    <div className="flex flex-col h-screen">
-      {/* Üst bar */}
-      <div className="flex items-center justify-between px-4 py-2 border-b">
+    <div className="min-h-screen flex flex-col border border-black">
+      <div className="h-[120px] border border-black flex items-center justify-between px-4">
         <h1 className="text-xl font-bold">Birtavsiye</h1>
+
         <input
           type="text"
           placeholder="Tavsiye ara..."
-          className="border px-2 py-1 rounded w-1/3"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="border px-2 py-1 rounded w-48"
         />
-        {session ? (
-          <div className="text-sm text-gray-600">
-            {session.user.email} —
-            <button onClick={handleLogout} className="text-red-500 ml-2">
-              Çıkış Yap
+
+        <div className="text-sm">
+          {user ? (
+            <div className="flex items-center space-x-2">
+              <span className="text-gray-600">{user.email}</span>
+              <button className="text-red-500 underline" onClick={handleLogout}>
+                Çıkış Yap
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => router.push("/login")}
+              className="text-blue-600 underline"
+            >
+              Oturum Aç
             </button>
-          </div>
-        ) : (
-          <a href="/giris" className="text-blue-500 text-sm">
-            Oturum Aç
-          </a>
-        )}
+          )}
+        </div>
       </div>
 
-      {/* Ana içerik */}
-      <div className="flex flex-1">
-        {/* Sol blok */}
-        <div className="w-1/4 border-r p-2 overflow-y-auto">
+      <div className="flex flex-1 border border-black">
+        {/* Sol Blok */}
+        <div className="w-1/4 border border-black p-2 overflow-y-auto">
           <h2 className="font-bold mb-2">Tavsiyeler</h2>
           {filteredRecommendations.map((rec) => (
             <button
               key={rec.id}
-              className={`block w-full text-left px-2 py-1 rounded hover:bg-gray-100 ${
-                selectedRecommendation?.id === rec.id ? "bg-gray-200" : ""
+              className={`block w-full text-left px-2 py-1 mb-1 rounded ${
+                selectedRecommendation?.id === rec.id
+                  ? "bg-gray-300 font-bold"
+                  : "bg-white hover:bg-gray-100"
               }`}
               onClick={() => setSelectedRecommendation(rec)}
             >
@@ -119,63 +173,73 @@ export default function Home() {
           ))}
         </div>
 
-        {/* Orta blok */}
-        <div className="flex-1 p-4 overflow-y-auto border-r">
+        {/* Orta Blok */}
+        <div className="w-2/4 border border-black p-4">
           {selectedRecommendation ? (
             <>
-              <h2 className="text-lg font-semibold mb-2">{selectedRecommendation.title}</h2>
-              {selectedRecommendation.content && (
-                <p className="mb-4 text-gray-700 text-sm">{selectedRecommendation.content}</p>
+              <h2 className="text-lg font-bold mb-2">{selectedRecommendation.title}</h2>
+              {entries.length === 0 ? (
+                <p className="text-gray-600">Bu başlık altında henüz entry yok.</p>
+              ) : (
+                <ul className="mb-4">
+                  {entries.map((entry, index) => (
+                    <li key={index} className="border p-2 mb-2 rounded">
+                      {entry.content} — <span className="text-sm text-gray-600">{entry.author}</span>
+                    </li>
+                  ))}
+                </ul>
               )}
-              {entries.map((entry) => (
-                <div key={entry.id} className="mb-2 border p-2 rounded">
-                  {entry.content} —{" "}
-                  <span className="text-sm text-gray-500">{entry.author}</span>
-                </div>
-              ))}
-              {session && (
-                <div className="mt-4">
+
+              {user && (
+                <form onSubmit={handleEntrySubmit} className="space-y-2">
                   <textarea
-                    value={newEntry}
-                    onChange={(e) => setNewEntry(e.target.value)}
+                    value={entryContent}
+                    onChange={(e) => setEntryContent(e.target.value)}
                     className="w-full border p-2 rounded"
                     placeholder="Tavsiyeni yaz..."
                   />
                   <button
-                    onClick={handleAddEntry}
-                    className="bg-green-500 text-white px-4 py-1 rounded mt-2"
+                    type="submit"
+                    className="bg-green-500 text-white px-4 py-2 rounded w-full"
                   >
-                    Ekle
+                    Entry Ekle
                   </button>
-                </div>
+                </form>
               )}
             </>
           ) : (
-            <p className="text-gray-500">Bir başlık seçin.</p>
+            <p className="text-gray-600">Bir başlık seçin.</p>
           )}
         </div>
 
-        {/* Sağ blok */}
-        <div className="w-1/4 p-2">
-          <h2 className="text-sm text-gray-600">Yan içerik veya reklam alanı</h2>
+        {/* Sağ Blok */}
+        <div className="w-1/4 border border-black p-4">
+          <p>Sağ Blok</p>
         </div>
       </div>
 
-      {/* Tavsiye ekle butonu */}
-      {session && (
-        <div className="p-2 border-t">
-          <input
-            value={newRecommendation}
-            onChange={(e) => setNewRecommendation(e.target.value)}
-            placeholder="Yeni başlık..."
-            className="border px-2 py-1 rounded w-2/3"
-          />
-          <button
-            onClick={handleAddRecommendation}
-            className="bg-blue-500 text-white px-4 py-1 rounded ml-2"
-          >
-            Tavsiye Ekle
-          </button>
+      {user && (
+        <div className="border-t border-black p-4 bg-gray-50">
+          <form onSubmit={handleRecommendationSubmit} className="space-y-2 max-w-2xl mx-auto">
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full border p-2 rounded"
+              placeholder="Yeni başlık"
+            />
+            <textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              className="w-full border p-2 rounded"
+              placeholder="İlk tavsiyeni yaz..."
+            />
+            <button
+              type="submit"
+              className="bg-blue-600 text-white px-4 py-2 rounded w-full"
+            >
+              Tavsiye Ekle
+            </button>
+          </form>
         </div>
       )}
     </div>
